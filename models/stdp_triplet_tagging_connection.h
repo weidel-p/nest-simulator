@@ -82,11 +82,13 @@
 
 // C-header for math.h since copysign() is in C99 but not C++98
 #include <math.h>
-#include "connection.h"
-#include "spikecounter.h"
 
 // Includes from models:
 #include "volume_transmitter.h"
+
+#include "connection.h"
+#include "spikecounter.h"
+#include <iostream>
 
 namespace nest
 {
@@ -123,6 +125,8 @@ public:
   double_t b_;
   double_t Wmin_;
   double_t Wmax_;
+
+  double_t tau_target_;
 };
 
 inline long_t
@@ -248,10 +252,10 @@ public:
    weight_ = w;
  }
 
-  void trigger_update_weight( thread t,
-    const std::vector< spikecounter >& dopa_spikes,
-    double_t t_trig,
-    const STDPTripletTaggingCommonProperties& cp );
+ void trigger_update_weight( thread t,
+   const std::vector< spikecounter >& dopa_spikes,
+   double_t t_trig,
+   const STDPTripletTaggingCommonProperties& cp );
 
 
 
@@ -274,18 +278,20 @@ private:
     const STDPTripletTaggingCommonProperties& cp );
 
  inline double_t
- facilitate_( double_t w, double_t kplus, double_t ky )
+ facilitate_( double_t w, double_t kplus, double_t ky ,
+ const STDPTripletTaggingCommonProperties& cp)
  {
    double_t new_w = std::abs( w ) + kplus * ( Aplus_ + Aplus_triplet_ * ky );
-   return copysign( new_w < std::abs( Wmax_ ) ? new_w : Wmax_, Wmax_ );
+   return copysign( new_w < std::abs( cp.Wmax_ ) ? new_w : cp.Wmax_, cp.Wmax_ );
  }
 
  inline double_t
- depress_( double_t w, double_t kminus, double_t Kplus_triplet_ )
+ depress_( double_t w, double_t kminus, double_t Kplus_triplet_ ,
+ const STDPTripletTaggingCommonProperties& cp)
  {
    double_t new_w =
      std::abs( w ) - kminus * ( Aminus_ + Aminus_triplet_ * Kplus_triplet_ );
-   return copysign( new_w > 0.0 ? new_w : 0.0, Wmax_ );
+   return copysign( new_w > 0.0 ? new_w : 0.0, cp.Wmax_ );
  }
 
  // data members of each connection
@@ -298,11 +304,12 @@ private:
  double_t Aminus_triplet_;
  double_t Kplus_;
  double_t Kplus_triplet_;
- double_t Wmax_;
 
- double_t tau_n_;
  double_t n_;
  double_t c_;
+
+ double_t tag_;
+ double_t target_;
 
  // dopa_spikes_idx_ refers to the dopamine spike that has just been processes
  // after trigger_update_weight a pseudo dopamine spike at t_trig is stored at
@@ -383,6 +390,7 @@ STDPTripletTaggingConnection< targetidentifierT >::process_dopa_spikes_(
     // no dopamine spikes in (t0, t1]
     // weight and eligibility c are at time t0 but dopamine trace n is at time
     // of last dopa spike
+
     double_t n0 =
       n_ * std::exp( ( dopa_spikes[ dopa_spikes_idx_ ].spike_time_ - t0 )
              / cp.tau_n_ ); // dopamine trace n at time t0
@@ -434,7 +442,7 @@ STDPTripletTaggingConnection< targetidentifierT >::trigger_update_weight( thread
   process_dopa_spikes_( dopa_spikes, t0, t_trig, cp );
   n_ = n_ * std::exp( ( dopa_spikes[ dopa_spikes_idx_ ].spike_time_ - t_trig )
               / cp.tau_n_ );
-  Kplus_ = Kplus_ * std::exp( ( t_last_update_ - t_trig ) / cp.tau_plus_ );
+  //Kplus_ = Kplus_ * std::exp( ( t_last_update_ - t_trig ) / cp.tau_plus_ );
 
   t_last_update_ = t_trig;
   dopa_spikes_idx_ = 0;
@@ -449,10 +457,11 @@ STDPTripletTaggingConnection< targetidentifierT >::update_weight_( double_t c0,
   double_t minus_dt,
   const STDPTripletTaggingCommonProperties& cp )
 {
-  const double_t taus_ = ( cp.tau_c_ + cp.tau_n_ ) / ( cp.tau_c_ * cp.tau_n_ );
-  weight_ = weight_
-    - c0 * ( n0 / taus_ * numerics::expm1( taus_ * minus_dt )
-             - cp.b_ * cp.tau_c_ * numerics::expm1( minus_dt / cp.tau_c_ ) );
+  //weight_ = weight_
+  //  - c0 * ( n0 / taus_ * numerics::expm1( taus_ * minus_dt )
+  //           - cp.b_ * cp.tau_c_ * numerics::expm1( minus_dt / cp.tau_c_ ) );
+  //
+  weight_ = weight_ + ((weight_ - target_) / cp.tau_target_) * minus_dt;
 
   if ( weight_ < cp.Wmin_ )
     weight_ = cp.Wmin_;
@@ -506,7 +515,7 @@ STDPTripletTaggingConnection< targetidentifierT >::send( Event& e,
    }
 
    weight_ =
-     facilitate_( weight_, Kplus_ * std::exp( minus_dt / tau_plus_ ), ky );
+     facilitate_( weight_, Kplus_ * std::exp( minus_dt / tau_plus_ ), ky, cp);
  }
 
  // depression due to new pre-synaptic spike
@@ -516,7 +525,7 @@ STDPTripletTaggingConnection< targetidentifierT >::send( Event& e,
  // for determining the K value, because the K value must propagate
  // out to the synapse
  weight_ = depress_(
-   weight_, target->get_K_value( t_spike - dendritic_delay ), Kplus_triplet_ );
+   weight_, target->get_K_value( t_spike - dendritic_delay ), Kplus_triplet_ , cp);
 
  Kplus_triplet_ += 1.0;
  Kplus_ = Kplus_ * std::exp( ( t_lastspike - t_spike ) / tau_plus_ ) + 1.0;
@@ -541,7 +550,12 @@ STDPTripletTaggingConnection< targetidentifierT >::STDPTripletTaggingConnection(
  , Aminus_triplet_( 2.3e-4 )
  , Kplus_( 0.0 )
  , Kplus_triplet_( 0.0 )
- , Wmax_( 100.0 )
+ , n_(0.)
+ , c_(0.)
+ , dopa_spikes_idx_( 0 )
+ , t_last_update_( 0.0 )
+ , tag_( 1.0 )
+ , target_( 2.0 )
 {
 }
 
@@ -558,7 +572,12 @@ STDPTripletTaggingConnection< targetidentifierT >::STDPTripletTaggingConnection(
  , Aminus_triplet_( rhs.Aminus_triplet_ )
  , Kplus_( rhs.Kplus_ )
  , Kplus_triplet_( rhs.Kplus_triplet_ )
- , Wmax_( rhs.Wmax_ )
+ , n_( rhs.n_ )
+ , c_( rhs.c_ )
+ , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
+ , t_last_update_( rhs.t_last_update_ )
+ , tag_( rhs.tag_)
+ , target_( rhs.target_)
 {
 }
 
@@ -577,10 +596,11 @@ STDPTripletTaggingConnection< targetidentifierT >::get_status(
  def< double_t >( d, "Aminus_triplet", Aminus_triplet_ );
  def< double_t >( d, "Kplus", Kplus_ );
  def< double_t >( d, "Kplus_triplet", Kplus_triplet_ );
- def< double_t >( d, "Wmax", Wmax_ );
 
-  // own properties, different for individual synapse
-  def< double_t >( d, "n", n_ );
+ // own properties, different for individual synapse
+ def< double_t >( d, "n", n_ );
+ def< double_t >( d, "c", c_ );
+ def< double_t >( d, "target", target_ );
 }
 
 template < typename targetidentifierT >
@@ -599,16 +619,10 @@ STDPTripletTaggingConnection< targetidentifierT >::set_status(
  updateValue< double_t >( d, "Aminus_triplet", Aminus_triplet_ );
  updateValue< double_t >( d, "Kplus", Kplus_ );
  updateValue< double_t >( d, "Kplus_triplet", Kplus_triplet_ );
- updateValue< double_t >( d, "Wmax", Wmax_ );
 
-  updateValue< double_t >( d, "n", n_ );
-
- // check if weight_ and Wmax_ has the same sign
- if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )
-        == ( ( Wmax_ >= 0 ) - ( Wmax_ < 0 ) ) ) )
- {
-   throw BadProperty( "Weight and Wmax must have same sign." );
- }
+ updateValue< double_t >( d, "n", n_ );
+ updateValue< double_t >( d, "c", c_ );
+ updateValue< double_t >( d, "target", target_ );
 
  if ( not( Kplus_ >= 0 ) )
  {

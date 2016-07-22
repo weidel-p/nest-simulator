@@ -48,6 +48,7 @@ STDPTripletTaggingCommonProperties::STDPTripletTaggingCommonProperties()
   , b_( 0.0 )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
+  , tau_target_( 200.0 )
 {
 }
 
@@ -69,6 +70,7 @@ STDPTripletTaggingCommonProperties::get_status( DictionaryDatum& d ) const
   def< double_t >( d, "b", b_ );
   def< double_t >( d, "Wmin", Wmin_ );
   def< double_t >( d, "Wmax", Wmax_ );
+  def< double_t >( d, "tau_target", tau_target_ );
 }
 
 void
@@ -95,6 +97,7 @@ STDPTripletTaggingCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double_t >( d, "b", b_ );
   updateValue< double_t >( d, "Wmin", Wmin_ );
   updateValue< double_t >( d, "Wmax", Wmax_ );
+  updateValue< double_t >( d, "tau_target", tau_target_ );
 }
 
 Node*
