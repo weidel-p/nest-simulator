@@ -127,6 +127,8 @@ public:
   double_t Wmax_;
 
   double_t tau_target_;
+  double_t theta_n_;
+  double_t theta_tag_;
 };
 
 inline long_t
@@ -282,6 +284,10 @@ private:
  const STDPTripletTaggingCommonProperties& cp)
  {
    double_t new_w = std::abs( w ) + kplus * ( Aplus_ + Aplus_triplet_ * ky );
+   if (new_w - w > cp.theta_tag_){
+       tag_ = new_w;
+       std::cout << "SET TAG FACILITY" << std::endl;
+   }
    return copysign( new_w < std::abs( cp.Wmax_ ) ? new_w : cp.Wmax_, cp.Wmax_ );
  }
 
@@ -291,7 +297,23 @@ private:
  {
    double_t new_w =
      std::abs( w ) - kminus * ( Aminus_ + Aminus_triplet_ * Kplus_triplet_ );
+   if (w - new_w > cp.theta_tag_){
+       tag_ = new_w;
+       std::cout << "SET TAG DEPRESSION" << std::endl;
+    }
    return copysign( new_w > 0.0 ? new_w : 0.0, cp.Wmax_ );
+ }
+
+ inline void 
+ set_target_( )
+ {
+     target_ = tag_;
+ }
+
+ inline void 
+ reset_tag_( )
+ {
+     tag_ = target_;
  }
 
  // data members of each connection
@@ -310,6 +332,7 @@ private:
 
  double_t tag_;
  double_t target_;
+ 
 
  // dopa_spikes_idx_ refers to the dopamine spike that has just been processes
  // after trigger_update_weight a pseudo dopamine spike at t_trig is stored at
@@ -461,6 +484,12 @@ STDPTripletTaggingConnection< targetidentifierT >::update_weight_( double_t c0,
   //  - c0 * ( n0 / taus_ * numerics::expm1( taus_ * minus_dt )
   //           - cp.b_ * cp.tau_c_ * numerics::expm1( minus_dt / cp.tau_c_ ) );
   //
+  
+  if (n_ > cp.b_ + cp.theta_n_)
+      set_target_();
+  else if (n_ < cp.b_ - cp.theta_n_)
+      reset_tag_();
+
   weight_ = weight_ + ((weight_ - target_) / cp.tau_target_) * minus_dt;
 
   if ( weight_ < cp.Wmin_ )
@@ -555,7 +584,7 @@ STDPTripletTaggingConnection< targetidentifierT >::STDPTripletTaggingConnection(
  , dopa_spikes_idx_( 0 )
  , t_last_update_( 0.0 )
  , tag_( 1.0 )
- , target_( 2.0 )
+ , target_( 1.0 )
 {
 }
 
