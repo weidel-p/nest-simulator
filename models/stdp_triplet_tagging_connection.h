@@ -286,7 +286,6 @@ private:
    double_t new_w = std::abs( w ) + kplus * ( Aplus_ + Aplus_triplet_ * ky );
    if (new_w - w > cp.theta_tag_){
        tag_ = new_w;
-       std::cout << "SET TAG FACILITY" << std::endl;
    }
    return copysign( new_w < std::abs( cp.Wmax_ ) ? new_w : cp.Wmax_, cp.Wmax_ );
  }
@@ -299,7 +298,6 @@ private:
      std::abs( w ) - kminus * ( Aminus_ + Aminus_triplet_ * Kplus_triplet_ );
    if (w - new_w > cp.theta_tag_){
        tag_ = new_w;
-       std::cout << "SET TAG DEPRESSION" << std::endl;
     }
    return copysign( new_w > 0.0 ? new_w : 0.0, cp.Wmax_ );
  }
@@ -490,7 +488,9 @@ STDPTripletTaggingConnection< targetidentifierT >::update_weight_( double_t c0,
   else if (n_ < cp.b_ - cp.theta_n_)
       reset_tag_();
 
+
   weight_ = weight_ + ((weight_ - target_) / cp.tau_target_) * minus_dt;
+  tag_ = tag_ + ((tag_ - target_) / (cp.tau_target_ / 2.)) * minus_dt;
 
   if ( weight_ < cp.Wmin_ )
     weight_ = cp.Wmin_;
@@ -629,6 +629,7 @@ STDPTripletTaggingConnection< targetidentifierT >::get_status(
  // own properties, different for individual synapse
  def< double_t >( d, "n", n_ );
  def< double_t >( d, "c", c_ );
+ def< double_t >( d, "tag", tag_);
  def< double_t >( d, "target", target_ );
 }
 
@@ -651,6 +652,7 @@ STDPTripletTaggingConnection< targetidentifierT >::set_status(
 
  updateValue< double_t >( d, "n", n_ );
  updateValue< double_t >( d, "c", c_ );
+ updateValue< double_t >( d, "tag", tag_);
  updateValue< double_t >( d, "target", target_ );
 
  if ( not( Kplus_ >= 0 ) )
