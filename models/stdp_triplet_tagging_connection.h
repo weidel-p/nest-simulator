@@ -490,7 +490,7 @@ STDPTripletTaggingConnection< targetidentifierT >::update_weight_( double_t c0,
 
 
   weight_ = weight_ + ((weight_ - target_) / cp.tau_target_) * minus_dt;
-  tag_ = tag_ + ((tag_ - target_) / (cp.tau_target_ / 2.)) * minus_dt;
+  tag_ = tag_ + ((tag_ - target_) / (cp.tau_target_ * 2.)) * minus_dt;
 
   if ( weight_ < cp.Wmin_ )
     weight_ = cp.Wmin_;
