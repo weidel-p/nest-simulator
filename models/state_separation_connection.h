@@ -378,7 +378,7 @@ StateSeparationConnection< targetidentifierT >::update_weight_(
 //std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
 
     if (n0 > cp.n_upper_threshold_ || n0 < cp.n_lower_threshold_){
-        weight_ += cp.A_ * Kminus_ / cp.mean_firing_rate_ * (Kplus_ / cp.mean_firing_rate_ - 1.);
+        weight_ += cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
     }
 
   if ( weight_ < cp.Wmin_ )
