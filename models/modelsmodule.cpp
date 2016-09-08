@@ -113,6 +113,7 @@
 #include "stdp_triplet_connection.h"
 #include "stdp_dopa_connection.h"
 #include "state_separation_connection.h"
+#include "state_readout_connection.h"
 #include "stdp_pl_connection_hom.h"
 #include "tsodyks2_connection.h"
 #include "tsodyks_connection.h"
@@ -577,7 +578,6 @@ ModelsModule::init( SLIInterpreter* )
     .register_connection_model< STDPDopaConnection< TargetIdentifierIndex > >(
       "stdp_dopamine_synapse_hpc" );
 
-
   /* BeginDocumentation
      Name: state_separation_synapse_hpc - Variant of state_separation_synapse with low
      memory consumption.
@@ -591,6 +591,20 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< StateSeparationConnection< TargetIdentifierIndex > >(
       "state_separation_synapse_hpc" );
+
+  /* BeginDocumentation
+     Name: state_separation_synapse_hpc - Variant of state_separation_synapse with low
+     memory consumption.
+     SeeAlso: synapsedict, state_separation_synapse, static_synapse_hpc
+  */
+  kernel()
+    .model_manager
+    .register_connection_model< StateReadoutConnection< TargetIdentifierPtrRport > >(
+      "state_readout_synapse" );
+  kernel()
+    .model_manager
+    .register_connection_model< StateReadoutConnection< TargetIdentifierIndex > >(
+      "state_readout_synapse_hpc" );
 
   /* BeginDocumentation
      Name: vogels_sprekeler_synapse_hpc - Variant of vogels_sprekeler_synapse

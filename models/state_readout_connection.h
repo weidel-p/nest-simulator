@@ -1,5 +1,5 @@
 /*
- *  state_separation.h
+ *  state_readout_connection.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef STATE_SEPARATION_H
-#define STATE_SEPARATION_H
+#ifndef STATE_READOUT_H
+#define STATE_READOUT_H
 
 /* BeginDocumentation
 
@@ -108,14 +108,14 @@ namespace nest
  * Class containing the common properties for all synapses of type dopamine
  * connection.
  */
-class StateSeparationCommonProperties : public CommonSynapseProperties
+class StateReadoutCommonProperties : public CommonSynapseProperties
 {
 public:
   /**
    * Default constructor.
    * Sets all property values to defaults.
    */
-  StateSeparationCommonProperties();
+  StateReadoutCommonProperties();
 
   /**
    * Get all properties and put them into a dictionary.
@@ -144,7 +144,7 @@ public:
 };
 
 inline long
-StateSeparationCommonProperties::get_vt_gid() const
+StateReadoutCommonProperties::get_vt_gid() const
 {
   if ( vt_ != 0 )
     return vt_->get_gid();
@@ -153,28 +153,28 @@ StateSeparationCommonProperties::get_vt_gid() const
 }
 
 /**
- * Class representing an StateSeparationConnection with homogeneous parameters,
+ * Class representing an StateReadoutConnection with homogeneous parameters,
  * i.e. parameters are the same for all synapses.
  */
 template < typename targetidentifierT >
-class StateSeparationConnection : public Connection< targetidentifierT >
+class StateReadoutConnection : public Connection< targetidentifierT >
 {
 
 public:
-  typedef StateSeparationCommonProperties CommonPropertiesType;
+  typedef StateReadoutCommonProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
 
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  StateSeparationConnection();
+  StateReadoutConnection();
 
   /**
    * Copy constructor from a property object.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  StateSeparationConnection( const StateSeparationConnection& );
+  StateReadoutConnection( const StateReadoutConnection& );
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -199,12 +199,12 @@ public:
    * Send an event to the receiver of this connection.
    * \param e The event to send
    */
-  void send( Event& e, thread t, double_t, const StateSeparationCommonProperties& cp );
+  void send( Event& e, thread t, double_t, const StateReadoutCommonProperties& cp );
 
   void trigger_update_weight( thread t,
     const std::vector< spikecounter >& dopa_spikes,
     double t_trig,
-    const StateSeparationCommonProperties& cp );
+    const StateReadoutCommonProperties& cp );
 
   class ConnTestDummyNode : public ConnTestDummyNodeBase
   {
@@ -262,18 +262,18 @@ private:
   // update dopamine trace from last to current dopamine spike and increment
   // index
   void update_dopamine_( const std::vector< spikecounter >& dopa_spikes,
-    const StateSeparationCommonProperties& cp );
+    const StateReadoutCommonProperties& cp );
 
   void update_weight_(
     double n0,
     double t0,
     double t1,
-    const StateSeparationCommonProperties& cp );
+    const StateReadoutCommonProperties& cp );
 
   void process_dopa_spikes_( const std::vector< spikecounter >& dopa_spikes,
     double t0,
     double t1,
-    const StateSeparationCommonProperties& cp );
+    const StateReadoutCommonProperties& cp );
 
   // data members of each connection
   double weight_;
@@ -292,11 +292,11 @@ private:
 };
 
 //
-// Implementation of class StateSeparationConnection.
+// Implementation of class StateReadoutConnection.
 //
 
 template < typename targetidentifierT >
-StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
+StateReadoutConnection< targetidentifierT >::StateReadoutConnection()
   : ConnectionBase()
   , weight_( 1.0 )
   , Kplus_( 0.0 )
@@ -308,8 +308,8 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
 }
 
 template < typename targetidentifierT >
-StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
-  const StateSeparationConnection& rhs )
+StateReadoutConnection< targetidentifierT >::StateReadoutConnection(
+  const StateReadoutConnection& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
   , Kplus_( rhs.Kplus_ )
@@ -322,7 +322,7 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
 
 template < typename targetidentifierT >
 void
-StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
+StateReadoutConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
 
   // base class properties, different for individual synapse
@@ -337,7 +337,7 @@ StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d )
 
 template < typename targetidentifierT >
 void
-StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
+StateReadoutConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   ConnectorModel& cm )
 {
   // base class properties
@@ -354,9 +354,9 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::update_dopamine_(
+StateReadoutConnection< targetidentifierT >::update_dopamine_(
   const std::vector< spikecounter >& dopa_spikes,
-  const StateSeparationCommonProperties& cp )
+  const StateReadoutCommonProperties& cp )
 {
   double minus_dt = dopa_spikes[ dopa_spikes_idx_ ].spike_time_
     - dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_;
@@ -367,18 +367,21 @@ StateSeparationConnection< targetidentifierT >::update_dopamine_(
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::update_weight_( 
+StateReadoutConnection< targetidentifierT >::update_weight_( 
   double n0,
   double t0,
   double t1,
-  const StateSeparationCommonProperties& cp )
+  const StateReadoutCommonProperties& cp )
 {
 //double kminus = get_target(0)->get_K_value( t1 - get_delay());
 
 //std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
 
-    if (n0 > cp.n_upper_threshold_ || n0 < cp.n_lower_threshold_){
+    if (n0 > cp.n_upper_threshold_ ){
         weight_ += cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
+    }
+    else if (n0 < cp.n_lower_threshold_){
+        weight_ -= cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
     }
 
   if ( weight_ < cp.Wmin_ )
@@ -389,11 +392,11 @@ StateSeparationConnection< targetidentifierT >::update_weight_(
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::process_dopa_spikes_(
+StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
   const std::vector< spikecounter >& dopa_spikes,
   double t0,
   double t1,
-  const StateSeparationCommonProperties& cp )
+  const StateReadoutCommonProperties& cp )
 {
   // process dopa spikes in (t0, t1]
   // propagate weight from t0 to t1
@@ -456,10 +459,10 @@ StateSeparationConnection< targetidentifierT >::process_dopa_spikes_(
  */
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::send( Event& e,
+StateReadoutConnection< targetidentifierT >::send( Event& e,
   thread t,
   double_t,
-  const StateSeparationCommonProperties& cp )
+  const StateReadoutCommonProperties& cp )
 {
   // t_lastspike_ = 0 initially
 
@@ -511,10 +514,10 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::trigger_update_weight( thread t,
+StateReadoutConnection< targetidentifierT >::trigger_update_weight( thread t,
   const std::vector< spikecounter >& dopa_spikes,
   const double t_trig,
-  const StateSeparationCommonProperties& cp )
+  const StateReadoutCommonProperties& cp )
 {
   // propagate all state variables to time t_trig
   // this does not include the depression trace K_minus, which is updated in the
@@ -559,4 +562,4 @@ StateSeparationConnection< targetidentifierT >::trigger_update_weight( thread t,
 
 } // of namespace nest
 
-#endif // of #ifndef STATE_SEPARATION_H
+#endif // of #ifndef STATE_READOUT_H

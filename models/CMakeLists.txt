@@ -81,6 +81,7 @@ set( models_sources
     stdp_connection_hom.h stdp_connection_hom.cpp
     stdp_dopa_connection.h stdp_dopa_connection.cpp
     state_separation_connection.h state_separation_connection.cpp
+    state_readout_connection.h state_readout_connection.cpp
     stdp_connection_facetshw_hom.h stdp_connection_facetshw_hom_impl.h
     stdp_pl_connection_hom.h stdp_pl_connection_hom.cpp
     stdp_triplet_connection.h

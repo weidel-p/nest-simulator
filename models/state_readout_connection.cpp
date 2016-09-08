@@ -1,5 +1,5 @@
 /*
- *  state_separation.cpp
+ *  state_readout_connection.cpp
  *
  *  This file is part of NEST.
  *
@@ -20,7 +20,7 @@
  *
  */
 
-#include "state_separation_connection.h"
+#include "state_readout_connection.h"
 
 // Includes from nestkernel:
 #include "common_synapse_properties.h"
@@ -34,10 +34,10 @@
 namespace nest
 {
 //
-// Implementation of class StateSeparationCommonProperties.
+// Implementation of class StateReadoutCommonProperties.
 //
 
-StateSeparationCommonProperties::StateSeparationCommonProperties()
+StateReadoutCommonProperties::StateReadoutCommonProperties()
   : CommonSynapseProperties()
   , vt_( 0 )
   , A_( 1.0 )
@@ -53,7 +53,7 @@ StateSeparationCommonProperties::StateSeparationCommonProperties()
 }
 
 void
-StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
+StateReadoutCommonProperties::get_status( DictionaryDatum& d ) const
 {
   CommonSynapseProperties::get_status( d );
 
@@ -74,7 +74,7 @@ StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
 }
 
 void
-StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
+StateReadoutCommonProperties::set_status( const DictionaryDatum& d,
   ConnectorModel& cm )
 {
   CommonSynapseProperties::set_status( d, cm );
@@ -101,7 +101,7 @@ StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
 }
 
 Node*
-StateSeparationCommonProperties::get_node()
+StateReadoutCommonProperties::get_node()
 {
   if ( vt_ == 0 )
     throw BadProperty(
