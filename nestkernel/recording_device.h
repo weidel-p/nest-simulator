@@ -458,7 +458,7 @@ private:
     bool withtime_;        //!< true if time of event is to be printed, default
     bool withweight_;      //!< true if weight of event is to be printed
     bool withreceivergid_; //!< true if the receivers element GID is to be
-                           //printed, default
+    // printed, default
 
     long precision_;  //!< precision of doubles written to file
     bool scientific_; //!< use scientific format if true, else fixed
