@@ -22,6 +22,7 @@ set( models_sources
     aeif_cond_alpha.h aeif_cond_alpha.cpp
     aeif_cond_alpha_RK5.h aeif_cond_alpha_RK5.cpp
     aeif_cond_alpha_multisynapse.h aeif_cond_alpha_multisynapse.cpp
+    aeif_cond_beta_multisynapse.h aeif_cond_beta_multisynapse.cpp
     aeif_cond_exp.h aeif_cond_exp.cpp
     amat2_psc_exp.h amat2_psc_exp.cpp
     binary_neuron.h binary_neuron_impl.h
@@ -76,7 +77,7 @@ set( models_sources
     spin_detector.h spin_detector.cpp
     static_connection.h
     static_connection_hom_w.h
-    stdp_connection.h stdp_connection.cpp
+    stdp_connection.h
     stdp_connection_facetshw_hom.h stdp_connection_facetshw_hom_impl.h
     stdp_connection_hom.h stdp_connection_hom.cpp
     stdp_dopa_connection.h stdp_dopa_connection.cpp

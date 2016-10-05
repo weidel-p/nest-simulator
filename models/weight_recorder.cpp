@@ -43,10 +43,10 @@
 
 nest::weight_recorder::weight_recorder()
   : Node()
-  // record time and gid
+  // record time, gid, weight and receiver gid
   , device_( *this,
       RecordingDevice::SPIKE_DETECTOR,
-      "gdf",
+      "csv",
       true,
       true,
       true,
@@ -54,6 +54,7 @@ nest::weight_recorder::weight_recorder()
   , user_set_precise_times_( false )
   , has_proxies_( false )
   , local_receiver_( true )
+  , P_()
 {
 }
 
@@ -63,14 +64,15 @@ nest::weight_recorder::weight_recorder( const weight_recorder& n )
   , user_set_precise_times_( n.user_set_precise_times_ )
   , has_proxies_( false )
   , local_receiver_( true )
+  , P_( n.P_ )
 {
 }
 
 void
 nest::weight_recorder::init_state_( const Node& np )
 {
-  const weight_recorder& sd = dynamic_cast< const weight_recorder& >( np );
-  device_.init_state( sd.device_ );
+  const weight_recorder& wr = static_cast< const weight_recorder& >( np );
+  device_.init_state( wr.device_ );
   init_buffers_();
 }
 
@@ -78,48 +80,55 @@ void
 nest::weight_recorder::init_buffers_()
 {
   device_.init_buffers();
-
-  std::vector< std::vector< Event* > > tmp( 2, std::vector< Event* >() );
-  B_.spikes_.swap( tmp );
+  B_.events_ = std::vector< WeightRecorderEvent >();
 }
 
 void
 nest::weight_recorder::calibrate()
 {
-  if ( !user_set_precise_times_
-    && kernel().event_delivery_manager.get_off_grid_communication() )
+  if ( kernel().event_delivery_manager.get_off_grid_communication()
+    and not device_.is_precise_times_user_set() )
   {
-    device_.set_precise( true, 15 );
+    device_.set_precise_times( true );
+    std::string msg = String::compose(
+      "Precise neuron models exist: the property precise_times "
+      "of the %1 with gid %2 has been set to true",
+      get_name(),
+      get_gid() );
 
-    LOG( M_INFO,
-      "weight_recorder::calibrate",
-      String::compose(
-           "Precise neuron models exist: the property precise_times "
-           "of the %1 with gid %2 has been set to true, precision has "
-           "been set to 15.",
-           get_name(),
-           get_gid() ) );
+    if ( device_.is_precision_user_set() )
+    {
+      // if user explicitly set the precision, there is no need to do anything.
+      msg += ".";
+    }
+
+    else
+    {
+      // it makes sense to increase the precision if precise models are used.
+      device_.set_precision( 15 );
+      msg += ", precision has been set to 15.";
+    }
+
+    LOG( M_INFO, "spike_detector::calibrate", msg );
   }
 
   device_.calibrate();
 }
 
 void
-nest::weight_recorder::update( Time const&, const long, const long )
+nest::weight_recorder::update( Time const&, const long from, const long to )
 {
-  for ( std::vector< Event* >::iterator e =
-          B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].begin();
-        e != B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].end();
+
+  for ( std::vector< WeightRecorderEvent >::iterator e = B_.events_.begin();
+        e != B_.events_.end();
         ++e )
   {
-    assert( *e != 0 );
-    device_.record_event( **e );
-    delete *e;
+    device_.record_event( *e );
   }
 
   // do not use swap here to clear, since we want to keep the reserved()
   // memory for the next round
-  B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].clear();
+  B_.events_.clear();
 }
 
 void
@@ -139,6 +148,8 @@ nest::weight_recorder::get_status( DictionaryDatum& d ) const
           ++sibling )
       ( *sibling )->get_status( d );
   }
+
+  P_.get( d );
 }
 
 void
@@ -148,32 +159,80 @@ nest::weight_recorder::set_status( const DictionaryDatum& d )
     user_set_precise_times_ = true;
 
   device_.set_status( d );
+
+  P_.set( d );
 }
 
+
 void
-nest::weight_recorder::handle( SpikeEvent& e )
+nest::weight_recorder::handle( WeightRecorderEvent& e )
 {
   // accept spikes only if detector was active when spike was
   // emitted
   if ( device_.is_active( e.get_stamp() ) )
   {
-    assert( e.get_multiplicity() > 0 );
+    // if timestap of event is not in the recording interval
+    if ( std::fmod( e.get_stamp().get_ms(), P_.interval_ ) > P_.duration_ )
+      return;
 
-    long dest_buffer;
-    if ( kernel()
-           .modelrange_manager.get_model_of_gid( e.get_sender_gid() )
-           ->has_proxies() )
-      // events from central queue
-      dest_buffer = kernel().event_delivery_manager.read_toggle();
-    else
-      // locally delivered events
-      dest_buffer = kernel().event_delivery_manager.write_toggle();
+    // P_sources_ is defined and sender is not in it
+    // or P_targets_ is defined and receiver is not in it
+    if ( ( not P_.sources_.empty()
+           and not std::binary_search(
+                 P_.sources_.begin(), P_.sources_.end(), e.get_sender_gid() ) )
+      or ( not P_.targets_.empty()
+           and not std::binary_search( P_.targets_.begin(),
+                 P_.targets_.end(),
+                 e.get_receiver_gid() ) ) )
+      return;
 
-    for ( int i = 0; i < e.get_multiplicity(); ++i )
-    {
-      // We store the complete events
-      Event* event = e.clone();
-      B_.spikes_[ dest_buffer ].push_back( event );
-    }
+    WeightRecorderEvent* event = e.clone();
+    B_.events_.push_back( *event );
   }
+}
+
+nest::weight_recorder::Parameters_::Parameters_()
+  : sources_()
+  , targets_()
+  , duration_()
+  , interval_()
+{
+}
+
+nest::weight_recorder::Parameters_::Parameters_( const Parameters_& p )
+  : sources_( p.sources_ )
+  , targets_( p.targets_ )
+  , duration_( p.duration_ )
+  , interval_( p.interval_ )
+{
+}
+
+void
+nest::weight_recorder::Parameters_::get( DictionaryDatum& d ) const
+{
+  ( *d )[ names::source ] = sources_;
+  ( *d )[ names::target ] = targets_;
+  ( *d )[ names::duration ] = duration_;
+  ( *d )[ names::interval ] = interval_;
+}
+
+
+void
+nest::weight_recorder::Parameters_::set( const DictionaryDatum& d )
+{
+
+  if ( d->known( names::source ) )
+  {
+    sources_ = getValue< std::vector< long > >( d->lookup( names::source ) );
+    std::sort( sources_.begin(), sources_.end() );
+  }
+
+  if ( d->known( names::target ) )
+  {
+    targets_ = getValue< std::vector< long > >( d->lookup( names::target ) );
+    std::sort( targets_.begin(), targets_.end() );
+  }
+
+  updateValue< double >( d, names::interval, interval_ );
+  updateValue< double >( d, names::duration, duration_ );
 }

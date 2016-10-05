@@ -153,10 +153,6 @@ namespace nest
                    be recorded (default: true).
   /withgid       - boolean value which specifies whether the global id of the
                    observed node(s) should be recorded (default: false).
-  /withreceivergid       - boolean value which specifies whether the global id
-  of the
-                           observed receiving node(s) should be recorded
-  (default: false).
   /withweight    - boolean value which specifies whether the weight of the event
                    should be recorded (default: false).
   /time_in_steps - boolean value which specifies whether to print time in steps,
@@ -262,13 +258,17 @@ public:
    * @param Default value for withtime property
    * @param Default value for withgid property
    * @param Default value for withweight property
-   * @param Default value for withtargetgid property
+   * @param Default value for withreceivergid property
+   * @param Default value for withport property
+   * @param Default value for withrport property
    */
   RecordingDevice( const Node&,
     Mode,
     const std::string&,
     bool,
     bool,
+    bool = false,
+    bool = false,
     bool = false,
     bool = false );
 
@@ -383,7 +383,16 @@ public:
     return P_.to_accumulator_;
   }
 
-  inline void set_precise( bool use_precise, long precision );
+  inline void set_precise_times( bool precise_times );
+
+  inline void set_precision( long precision );
+
+  inline bool records_precise_times() const;
+
+  inline bool is_precision_user_set() const;
+
+  inline bool is_precise_times_user_set() const;
+
 
 private:
   /**
@@ -403,20 +412,29 @@ private:
   void print_id_( std::ostream&, index );
 
   /**
-   * Print a target node's global ID and/or address, according to the recorder's
-   * flags.
-   */
-  void print_receiver_id_( std::ostream&, index );
-
-  /**
    * Print the weight of an event.
    */
   void print_weight_( std::ostream&, double );
 
   /**
+   * Print the receiver gid of an event.
+   */
+  void print_receiver_( std::ostream&, index );
+
+  /**
+   * Print the receiver gid of an event.
+   */
+  void print_port_( std::ostream&, long );
+
+  /**
+   * Print the receiver gid of an event.
+   */
+  void print_rport_( std::ostream&, long );
+
+  /**
    * Store data in internal structure.
    */
-  void store_data_( index, index, const Time&, double, double );
+  void store_data_( index, const Time&, double, double, index, long, long );
 
   /**
    * Clear data in internal structure, and call clear_data_hook().
@@ -457,11 +475,15 @@ private:
     bool withgid_;         //!< true if element GID is to be printed, default
     bool withtime_;        //!< true if time of event is to be printed, default
     bool withweight_;      //!< true if weight of event is to be printed
-    bool withreceivergid_; //!< true if the receivers element GID is to be
-    // printed, default
+    bool withreceivergid_; //!< true if receiver GID is to be printed, default
+    bool withport_;        //!< true if receiver GID is to be printed, default
+    bool withrport_;       //!< true if receiver GID is to be printed, default
 
     long precision_;  //!< precision of doubles written to file
     bool scientific_; //!< use scientific format if true, else fixed
+
+    bool user_set_precise_times_; //!< true if user set precise_times
+    bool user_set_precision_;     //!< true if user set precision
 
     bool binary_; //!< true if to write files in binary mode instead of ASCII
     long fbuffer_size_;     //!< the buffer size to use when writing to file
@@ -483,8 +505,10 @@ private:
      * @param Default value for withgid property
      * @param Default value for withweight property
      * @param Default value for withreceivergid property
+     * @param Default value for withport property
+     * @param Default value for withrport property
      */
-    Parameters_( const std::string&, bool, bool, bool, bool );
+    Parameters_( const std::string&, bool, bool, bool, bool, bool, bool );
 
     //! Store current values in dictionary
     void get( const RecordingDevice&, DictionaryDatum& ) const;
@@ -499,6 +523,8 @@ private:
     size_t events_;                         //!< Event counter
     std::vector< long > event_senders_;     //!< List of event sender ids
     std::vector< long > event_receivers_;   //!< List of event receivers ids
+    std::vector< long > event_ports_;       //!< List of event ports
+    std::vector< long > event_rports_;      //!< List of event rports
     std::vector< double > event_times_ms_;  //!< List of event times in ms
     std::vector< long > event_times_steps_; //!< List of event times in steps
     //! List of event time offsets
@@ -523,6 +549,23 @@ private:
   Buffers_ V_;
 };
 
+inline bool
+RecordingDevice::is_precision_user_set() const
+{
+  return P_.user_set_precision_;
+}
+
+inline bool
+RecordingDevice::is_precise_times_user_set() const
+{
+  return P_.user_set_precise_times_;
+}
+
+inline bool
+RecordingDevice::records_precise_times() const
+{
+  return P_.precise_times_;
+}
 
 inline bool
 RecordingDevice::is_active( Time const& T ) const
@@ -543,9 +586,14 @@ RecordingDevice::get_status( DictionaryDatum& d ) const
 }
 
 inline void
-RecordingDevice::set_precise( bool use_precise, long precision )
+RecordingDevice::set_precise_times( bool use_precise )
 {
   P_.precise_times_ = use_precise;
+}
+
+inline void
+RecordingDevice::set_precision( long precision )
+{
   P_.precision_ = precision;
 }
 
