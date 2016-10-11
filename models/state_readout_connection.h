@@ -365,6 +365,7 @@ StateReadoutConnection< targetidentifierT >::update_dopamine_(
     + dopa_spikes[ dopa_spikes_idx_ ].multiplicity_ / cp.tau_n_;
 }
 
+
 template < typename targetidentifierT >
 inline void
 StateReadoutConnection< targetidentifierT >::update_weight_( 
@@ -377,12 +378,38 @@ StateReadoutConnection< targetidentifierT >::update_weight_(
 
 //std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
 
+    double norm_w = weight_ / cp.Wmax_;
     if (n0 > cp.n_upper_threshold_ ){
-        weight_ += cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
+        //std::cout << weight_ << " " << norm_w << " " << n0 << " " << Kplus_ <<  " " << Kminus_ << std::endl; 
+        if (Kminus_ > cp.mean_firing_rate_){
+            //facilitate
+            double dw = Kplus_ * (Kminus_ - cp.mean_firing_rate_);
+          //  std::cout << "high dopa facilitate by " << cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw))) << std::endl;
+            norm_w += cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
+        }
+        else{
+            //depress
+            double dw = Kplus_ * (Kminus_ - cp.mean_firing_rate_);
+            //std::cout << "high dopa depress by " << cp.A_ * norm_w * (dw / (1 + std::abs(dw))) << std::endl;
+            norm_w += cp.A_ * norm_w * (dw / (1 + std::abs(dw)));
+        }
     }
     else if (n0 < cp.n_lower_threshold_){
-        weight_ -= cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
+        //std::cout << weight_ << " " << norm_w << " " << n0 << " " << Kplus_ <<  " " << Kminus_ << std::endl; 
+        if (Kminus_ > cp.mean_firing_rate_){
+            //depress
+            double dw = (-1) * Kplus_ * (Kminus_ - cp.mean_firing_rate_);
+          //  std::cout << "low dopa depress by " << cp.A_ * norm_w * (dw / (1 + std::abs(dw))) << std::endl;
+            norm_w += cp.A_ * norm_w * (dw / (1 + std::abs(dw)));
+        }
+        else{
+            //facilitate
+            double dw = (-1) * Kplus_ * (Kminus_ - cp.mean_firing_rate_);
+            //std::cout << "low dopa facilitate by " << cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw))) << std::endl;
+            norm_w += cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
+        }
     }
+    weight_ = norm_w * cp.Wmax_;
 
   if ( weight_ < cp.Wmin_ )
     weight_ = cp.Wmin_;
@@ -505,6 +532,8 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   e.set_weight( weight_ );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
+  e.set_Kplus( Kplus_ );
+  e.set_Kminus( Kminus_ );
   e();
 
   Kplus_ =

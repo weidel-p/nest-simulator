@@ -219,6 +219,8 @@ ConnectorBase::send_weight_event( const CommonSynapseProperties& cp,
     wr_e.set_sender( e.get_sender() );
     wr_e.set_sender_gid( e.get_sender_gid() );
     wr_e.set_weight( e.get_weight() );
+    wr_e.set_Kminus( e.get_Kminus() );
+    wr_e.set_Kplus( e.get_Kplus() );
     wr_e.set_delay( e.get_delay() );
     wr_e.set_receiver(
       *cp.weight_recorders_[ t ] ); // receiver is the weight recorder

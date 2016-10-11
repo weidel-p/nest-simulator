@@ -245,6 +245,12 @@ public:
    */
   void set_weight( weight t );
 
+  double get_Kplus() const;
+  void set_Kplus( double k);
+
+  double get_Kminus() const;
+  void set_Kminus( double k);
+
   /**
    * Check integrity of the event.
    * This function returns true, if all data, in particular sender
@@ -270,6 +276,9 @@ protected:
                       */
   Node* sender_;     //!< Pointer to sender or NULL.
   Node* receiver_;   //!< Pointer to receiver or NULL.
+
+  double Kplus_;
+  double Kminus_;
 
 
   /**
@@ -1105,6 +1114,30 @@ inline void
 Event::set_weight( weight w )
 {
   w_ = w;
+}
+
+inline double 
+Event::get_Kplus() const
+{
+  return Kplus_;
+}
+
+inline void
+Event::set_Kplus( double k )
+{
+  Kplus_ = k;
+}
+
+inline double 
+Event::get_Kminus() const
+{
+  return Kminus_;
+}
+
+inline void
+Event::set_Kminus( double k )
+{
+  Kminus_ = k;
 }
 
 inline Time const&
