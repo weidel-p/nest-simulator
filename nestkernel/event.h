@@ -251,6 +251,9 @@ public:
   double get_Kminus() const;
   void set_Kminus( double k);
 
+  double get_dopa() const;
+  void set_dopa( double k);
+
   /**
    * Check integrity of the event.
    * This function returns true, if all data, in particular sender
@@ -279,6 +282,7 @@ protected:
 
   double Kplus_;
   double Kminus_;
+  double dopa_;
 
 
   /**
@@ -1139,6 +1143,19 @@ Event::set_Kminus( double k )
 {
   Kminus_ = k;
 }
+
+inline double 
+Event::get_dopa() const
+{
+  return dopa_;
+}
+
+inline void
+Event::set_dopa( double d )
+{
+  dopa_ = d;
+}
+
 
 inline Time const&
 Event::get_stamp() const

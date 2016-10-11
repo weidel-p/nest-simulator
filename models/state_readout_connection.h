@@ -534,6 +534,7 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   e.set_rport( get_rport() );
   e.set_Kplus( Kplus_ );
   e.set_Kminus( Kminus_ );
+  e.set_dopa( n_ );
   e();
 
   Kplus_ =
