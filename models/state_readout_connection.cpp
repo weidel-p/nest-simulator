@@ -43,7 +43,6 @@ StateReadoutCommonProperties::StateReadoutCommonProperties()
   , Aplus_( 0.001 )
   , Aminus_( 0.001 )
   , tau_plus_( 20.0 )
-  , tau_n_( 200.0 )
   , b_( 0.0 )
   , mean_firing_rate_( 5.0 )
   , n_lower_threshold_( 1.0 )
@@ -66,7 +65,6 @@ StateReadoutCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, "Aplus", Aplus_);
   def< double >( d, "Aminus", Aminus_);
   def< double >( d, "tau_plus", tau_plus_ );
-  def< double >( d, "tau_n", tau_n_ );
   def< double >( d, "b", b_ );
   def< double >( d, "mean_firing_rate", mean_firing_rate_ );
   def< double >( d, "n_lower_threshold", n_lower_threshold_ );
@@ -84,7 +82,7 @@ StateReadoutCommonProperties::set_status( const DictionaryDatum& d,
   long vtgid;
   if ( updateValue< long >( d, "vt", vtgid ) )
   {
-    vt_ = dynamic_cast< volume_transmitter* >(
+    vt_ = dynamic_cast< volume_transmitter2* >(
       kernel().node_manager.get_node( vtgid ) );
 
     if ( vt_ == 0 )
@@ -94,7 +92,6 @@ StateReadoutCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, "Aplus", Aplus_);
   updateValue< double >( d, "Aminus", Aminus_);
   updateValue< double >( d, "tau_plus", tau_plus_ );
-  updateValue< double >( d, "tau_n", tau_n_ );
   updateValue< double >( d, "b", b_ );
   updateValue< double >( d, "mean_firing_rate", mean_firing_rate_ );
   updateValue< double >( d, "n_lower_threshold", n_lower_threshold_ );
