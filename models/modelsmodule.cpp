@@ -101,6 +101,7 @@
 #include "weight_recorder.h"
 
 #include "volume_transmitter.h"
+#include "volume_transmitter2.h"
 
 // Prototypes for synapses
 #include "common_synapse_properties.h"
@@ -240,6 +241,8 @@ ModelsModule::init( SLIInterpreter* )
     "correlospinmatrix_detector" );
   kernel().model_manager.register_node_model< volume_transmitter >(
     "volume_transmitter" );
+  kernel().model_manager.register_node_model< volume_transmitter2 >(
+    "volume_transmitter2" );
 
   // Create voltmeter as a multimeter pre-configured to record V_m.
   /*BeginDocumentation
@@ -594,6 +597,7 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< STDPDopaConnection< TargetIdentifierIndex > >(
       "stdp_dopamine_synapse_hpc" );
+
 
   /* BeginDocumentation
      Name: vogels_sprekeler_synapse_hpc - Variant of vogels_sprekeler_synapse
