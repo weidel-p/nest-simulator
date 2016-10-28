@@ -91,6 +91,7 @@ set( models_sources
     tsodyks_connection.h
     tsodyks_connection_hom.h tsodyks_connection_hom.cpp
     volume_transmitter.h volume_transmitter.cpp
+    volume_transmitter2.h volume_transmitter2.cpp
     vogels_sprekeler_connection.h
     weight_recorder.h weight_recorder.cpp
     spike_dilutor.h spike_dilutor.cpp
