@@ -338,7 +338,7 @@ StateReadoutConnection< targetidentifierT >::update_weight_( double n, double t,
         }
         else{
             //depress
-            norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
+            //norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
         }
 
     }
@@ -350,7 +350,7 @@ StateReadoutConnection< targetidentifierT >::update_weight_( double n, double t,
          }
          else{
              //facilitate
-             norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
+             //norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
          }
 
     }
