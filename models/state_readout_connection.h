@@ -378,33 +378,17 @@ StateReadoutConnection< targetidentifierT >::update_weight_(
 
 //std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
 
-    double norm_w = weight_ / cp.Wmax_;
-    if (n0 > cp.n_upper_threshold_ ){
-        //std::cout << weight_ << " " << norm_w << " " << n0 << " " << Kplus_ <<  " " << Kminus_ << std::endl; 
-        if (Kminus_ > cp.mean_firing_rate_){
-            //facilitate
-            double dw = Kplus_ * (Kminus_ - cp.mean_firing_rate_);
-          //  std::cout << "high dopa facilitate by " << cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw))) << std::endl;
-            norm_w += cp.A_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
-        }
-        else{
-            //depress
-            //norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
-        }
+    double norm_w = (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_);
+    double dw = Kplus_ * Kminus_;
+    if (n > cp.n_upper_threshold_ ){
+       //facilitate
+       norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
     }
-    else if (n0 < cp.n_lower_threshold_){
-        //std::cout << weight_ << " " << norm_w << " " << n0 << " " << Kplus_ <<  " " << Kminus_ << std::endl; 
-        if (Kminus_ > cp.mean_firing_rate_){
-             //depress
-             norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
-         }
-         else{
-             //facilitate
-             //norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
-         }
-
+    else if (n < cp.n_lower_threshold_){
+       //depress
+       norm_w -= cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
     }
-    weight_ = norm_w * cp.Wmax_;
+    weight_ = norm_w * (cp.Wmax_ - cp.Wmin_) + cp.Wmin_;
 
   if ( weight_ < cp.Wmin_ )
     weight_ = cp.Wmin_;
