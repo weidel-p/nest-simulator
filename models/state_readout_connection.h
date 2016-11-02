@@ -329,32 +329,17 @@ StateReadoutConnection< targetidentifierT >::update_weight_( double n, double t,
     Kplus_ = Kplus_ * std::exp( ( t_last_update_ - t) / cp.tau_plus_ );
     t_last_update_ = t;
 
-    double norm_w = weight_ / cp.Wmax_;
+    double norm_w = (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_);
+    double dw = Kplus_ * Kminus_;
     if (n > cp.n_upper_threshold_ ){
-        double dw = Kplus_ * (Kminus_ - cp.mean_firing_rate_);
-        if (Kminus_ > cp.mean_firing_rate_){
-            //facilitate
-            norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
-        }
-        else{
-            //depress
-            //norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
-        }
-
+       //facilitate
+       norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
     }
     else if (n < cp.n_lower_threshold_){
-        double dw = (-1) * Kplus_ * (Kminus_ - cp.mean_firing_rate_);
-        if (Kminus_ > cp.mean_firing_rate_){
-             //depress
-             norm_w += cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
-         }
-         else{
-             //facilitate
-             //norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
-         }
-
+       //depress
+       norm_w -= cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
     }
-    weight_ = norm_w * cp.Wmax_;
+    weight_ = norm_w * (cp.Wmax_ - cp.Wmin_) + cp.Wmin_;
 
     if ( weight_ < cp.Wmin_ )
       weight_ = cp.Wmin_;
