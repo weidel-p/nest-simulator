@@ -40,7 +40,8 @@ namespace nest
 StateReadoutCommonProperties::StateReadoutCommonProperties()
   : CommonSynapseProperties()
   , vt_( 0 )
-  , A_( 1.0 )
+  , Aplus_( 0.1 )
+  , Aminus_( 0.1 )
   , tau_plus_( 20.0 )
   , tau_n_( 200.0 )
   , b_( 0.0 )
@@ -62,7 +63,8 @@ StateReadoutCommonProperties::get_status( DictionaryDatum& d ) const
   else
     def< long >( d, "vt", -1 );
 
-  def< double >( d, "A", A_);
+  def< double >( d, "Aplus", Aplus_);
+  def< double >( d, "Aminus", Aminus_);
   def< double >( d, "tau_plus", tau_plus_ );
   def< double >( d, "tau_n", tau_n_ );
   def< double >( d, "b", b_ );
@@ -89,7 +91,8 @@ StateReadoutCommonProperties::set_status( const DictionaryDatum& d,
       throw BadProperty( "Dopamine source must be volume transmitter" );
   }
 
-  updateValue< double >( d, "A", A_);
+  updateValue< double >( d, "Aplus", Aplus_);
+  updateValue< double >( d, "Aminus", Aminus_);
   updateValue< double >( d, "tau_plus", tau_plus_ );
   updateValue< double >( d, "tau_n", tau_n_ );
   updateValue< double >( d, "b", b_ );

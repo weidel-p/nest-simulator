@@ -132,7 +132,8 @@ public:
   long get_vt_gid() const;
 
   volume_transmitter* vt_;
-  double A_;
+  double Aplus_;
+  double Aminus_;
   double tau_plus_;
   double tau_n_;
   double b_;
@@ -380,11 +381,11 @@ StateReadoutConnection< targetidentifierT >::update_weight_(
 
     double norm_w = (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_);
     double dw = Kplus_ * Kminus_;
-    if (n > cp.n_upper_threshold_ ){
+    if (n0 > cp.n_upper_threshold_ ){
        //facilitate
        norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
     }
-    else if (n < cp.n_lower_threshold_){
+    else if (n0 < cp.n_lower_threshold_){
        //depress
        norm_w -= cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
     }
