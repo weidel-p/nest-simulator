@@ -378,16 +378,19 @@ StateReadoutConnection< targetidentifierT >::update_weight_(
 //double kminus = get_target(0)->get_K_value( t1 - get_delay());
 
 //std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
+//
+    if (Kminus_ < cp.mean_firing_rate_ or Kplus_ < cp.mean_firing_rate_){
+        return;
+    }
 
     double norm_w = (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_);
-    double dw = Kplus_ * Kminus_;
     if (n0 > cp.n_upper_threshold_ ){
        //facilitate
-       norm_w += cp.Aplus_ * (1 - norm_w) * (dw / (1 + std::abs(dw)));
+       norm_w += cp.Aplus_ * (1 - norm_w) * Kplus_ * Kminus_;
     }
     else if (n0 < cp.n_lower_threshold_){
        //depress
-       norm_w -= cp.Aminus_ * norm_w * (dw / (1 + std::abs(dw)));
+       norm_w -= cp.Aminus_ * norm_w * Kplus_ * Kminus_;
     }
     weight_ = norm_w * (cp.Wmax_ - cp.Wmin_) + cp.Wmin_;
 
