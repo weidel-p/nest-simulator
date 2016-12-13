@@ -161,16 +161,16 @@ nest::Archiving_Node::get_history( double t1,
   }
   else
   {
-    std::deque< histentry >::iterator runner = history_.begin();
-    while ( ( runner != history_.end() ) && ( runner->t_ <= t1 ) )
-      ++runner;
-    *start = runner;
-    while ( ( runner != history_.end() ) && ( runner->t_ <= t2 ) )
+    std::deque< histentry >::iterator runner = history_.end();
+    while ( ( runner != history_.begin() ) && ( runner->t_ > t2 ) )
+      --runner;
+    *finish = runner;
+    while ( ( runner != history_.begin() ) && ( runner->t_ > t1 ) )
     {
       ( runner->access_counter_ )++;
-      ++runner;
+      --runner;
     }
-    *finish = runner;
+    *start = runner;
   }
 }
 
