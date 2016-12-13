@@ -140,6 +140,13 @@ nest::Archiving_Node::get_K_values( double t,
   K_value = 0.0;
 }
 
+
+double
+nest::Archiving_Node::get_tau_minus()
+{
+   return tau_minus_;
+}
+
 void
 nest::Archiving_Node::get_history( double t1,
   double t2,

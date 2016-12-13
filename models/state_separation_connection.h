@@ -89,6 +89,99 @@
    SeeAlso: volume_transmitter
 */
 
+/* 
+ * Needed quantities:
+ * Presynaptic activity: Kplus_
+ * Postsynaptic activity: Kminus_ (computed in target neuron)
+ * dopamine concentration: n_
+ * synaptic weight: weight_
+ * last update: t_last_update_
+ *
+ * Assume:
+ * Kplus_ and n_ and weight_ are already updated to t_last_update_ 
+ * There was no presynaptic spike between t_last_update_ and the current update step
+ * 
+ * 
+ * Pseudocode
+ *
+ * function send():
+ *     t_now = time of current presynaptic spike
+ *     dopa_spikes = get all dopamine spike from the volume transmitter
+ *     process_dopa_spikes()
+ *     e()
+ *
+ *
+ * function trigger_update_weight(dopa_spikes):
+ *     limit dopa spikes to first dopa spike later than t_last_update_
+ *     process_dopa_spikes() 
+ * 
+ *
+ * function process_dopa_spikes():
+ *     for t_dopa in [dopa_spikes, t_now]:
+ *         post_spikes = target->getHistory(t_last_update_, t_dopa)
+ *         for t_s in [post_spikes, t_dopa]:
+ *             Kminus_ = get Kminus_ at time t_last_update_
+ *
+ *             needed_t0 = check_if_update_weight_needed() 
+ *             propagate Kplus_, Kminus_, n_ to t_s in temporary variables 
+ *             needed_t1 = check_if_update_weight_needed() 
+ *
+ *             if needed_t0 and needed_t1:
+ *                  update_weight(t_last_update_, t_s)
+ *             if needed_t0 and not needed_t1:
+ *                  t_update_until = calc_update_needed_until(t_s)
+ *                  updated_weight(t_last_update_, t_update_until)
+ *             if not needed_t0 and needed_t1:
+ *                  t_update_from = calc_update_needed_from(t_s)
+ *                  update_weight(t_update_from, t_s)
+ *             
+ *             t_last_update_ = t_s
+ *             update Kplus_, n_ according to temporary values
+ *
+ *
+ *
+ * 
+ * function check_if_update_weight_needed():
+ *         if n_ > n_upper_threshold or n < n_lower_threshold:
+ *             if Kminus_ > Kminus_threshold and Kplus > Kplus_threshold:
+ *                 true
+ *             else:
+ *                 false
+ *         else:
+ *            false
+ *
+ *
+ *
+ * function update_weight(t0, t1):
+ *     dt = t1 - t0
+ *     weight_ += Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
+ *
+ *
+ *
+ * function calc_update_needed_from(t1)
+ *     t_threshold_cross_n = -tau_n * ln(n_lower_threshold / n_)
+ *     return min(t_threshold_cross_n, t1)
+ *
+ *
+ *
+ * function calc_update_needed_until(t1)
+ *     t_threshold_cross_K_minus = -tau_minus * ln(Kminus_threshold / Kminus)
+ *     t_threshold_cross_K_plus = -tau_plus * ln(Kplus_threshold / Kplus)
+ *     if n_ > n_upper_threshold:
+ *         t_threshold_cross_n = -tau_n * ln(n_upper_threshold / n_)
+ *     else:
+ *         t_threshold_cross_n = t1 
+ *
+ *     return min(t_threshold_cross_K_minus, t_threshold_cross_K_plus, t_threshold_cross_n, t1)
+ *     
+ *         
+ *
+ *
+ */
+
+
+
+
 // Includes from libnestutil:
 #include "numerics.h"
 

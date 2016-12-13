@@ -364,6 +364,13 @@ Node::get_K_values( double, double&, double& )
   throw UnexpectedEvent();
 }
 
+double
+Node::get_tau_minus()
+{
+  throw UnexpectedEvent();
+}
+
+
 void
 nest::Node::get_history( double,
   double,

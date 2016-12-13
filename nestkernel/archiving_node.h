@@ -176,6 +176,11 @@ public:
    */
   double get_tau_Ca() const;
 
+   /**
+   * retrieve the current value of tau_minus_
+   */
+  double get_tau_minus();
+
 protected:
   /**
    * \fn void set_spiketime(Time const & t_sp, double offset)
@@ -252,6 +257,7 @@ Archiving_Node::get_tau_Ca() const
 {
   return tau_Ca_;
 }
+
 
 inline double
 Archiving_Node::get_Ca_minus() const

@@ -636,6 +636,12 @@ public:
   virtual void get_K_values( double t, double& Kminus, double& triplet_Kminus );
 
   /**
+   * return tau_minus_.
+   * @throws UnexpectedEvent
+   */
+  virtual double get_tau_minus();
+
+  /**
   * return the spike history for (t1,t2].
   * @throws UnexpectedEvent
   */
