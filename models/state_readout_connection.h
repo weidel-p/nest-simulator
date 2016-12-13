@@ -379,7 +379,6 @@ public:
 private:
   void process_dopa_spikes_(
     thread t,
-    double t1,
     const std::vector< spikecounter >& dopa_spikes,
     const StateReadoutCommonProperties& cp);
 
@@ -662,7 +661,6 @@ template < typename targetidentifierT >
 inline void
 StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
   thread t,
-  double t1,
   const std::vector< spikecounter >& dopa_spikes,
   const StateReadoutCommonProperties& cp )
 {
@@ -672,17 +670,17 @@ StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
 
   std::deque< histentry >::iterator start;
   std::deque< histentry >::iterator finish;
-  target->get_history( t_last_update_,
-    t1,
-    &start,
-    &finish );
 
   for(std::vector< spikecounter >::const_iterator it = dopa_spikes.begin(); it != dopa_spikes.end(); ++it) {
     if (it->spike_time_ <= t_last_update_)
         continue;
   
     // get history of postsynaptic neuron
-    while ( start->t_ < it->spike_time_ and start != finish )
+    target->get_history( t_last_update_,
+    it->spike_time_,
+    &start,
+    &finish );
+    while ( start != finish )
     {
         //std::cout << "process post spike " << n_ << std::endl;
        process_next_(t, t_last_update_, start->t_, cp);
@@ -725,7 +723,7 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   // get history of dopamine spikes
   const std::vector< spikecounter >& dopa_spikes = cp.vt_->deliver_spikes();
 
-  process_dopa_spikes_(t, t_spike, dopa_spikes, cp);
+  process_dopa_spikes_(t, dopa_spikes, cp);
 
   process_next_(t, t_last_update_, t_spike, cp);
   t_last_update_ = t_spike;
@@ -754,7 +752,7 @@ StateReadoutConnection< targetidentifierT >::trigger_update_weight( thread t,
   const StateReadoutCommonProperties& cp )
 {
 
-  process_dopa_spikes_(t, t_trig, dopa_spikes, cp);
+  process_dopa_spikes_(t, dopa_spikes, cp);
   process_next_(t, t_last_update_, t_trig, cp);
   t_last_update_ = t_trig;
 
