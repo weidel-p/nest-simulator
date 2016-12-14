@@ -502,6 +502,7 @@ StateReadoutConnection< targetidentifierT >::facilitate_(
   double t1,
   const StateReadoutCommonProperties& cp){
 
+  assert(t1 >= t0);
   double dt = t1 - t0;
   double tau_minus = get_target( t )->get_tau_minus();
   
@@ -524,6 +525,7 @@ StateReadoutConnection< targetidentifierT >::depress_(
   double t1,
   const StateReadoutCommonProperties& cp){
   
+  assert(t1 >= t0);
   double dt = t1 - t0;
   double tau_minus = get_target( t )->get_tau_minus();
 
@@ -550,15 +552,16 @@ StateReadoutConnection< targetidentifierT >::process_next_(
 {
   //std::cout << t0 << " " << t1 << std::endl;
  
+  assert(t1 >= t0);
   Node* target = get_target( t );
 
   // update all traces to  t0
-  double Kminus_t0 = target->get_K_value( t0 );
+  Kminus_ = target->get_K_value( t0 );
 
-  int update_needed_t0 = check_if_update_needed( Kplus_, Kminus_t0, n_, cp ); 
+  int update_needed_t0 = check_if_update_needed( Kplus_, Kminus_, n_, cp ); 
 
   // propagate Kplus_, Kminus_, n_ to t1 in temporary variables 
-  double Kminus_t1 = Kminus_t0 * std::exp( ( t0 - t1 ) / target->get_tau_minus() );
+  double Kminus_t1 = Kminus_ * std::exp( ( t0 - t1 ) / target->get_tau_minus() );
   double Kplus_t1 = Kplus_ * std::exp( ( t0 - t1 ) / cp.tau_plus_ );
   double n_t1 = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
 
@@ -567,40 +570,52 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   // if potentitaion at t0
   if (update_needed_t0 == 1 and update_needed_t1 != -1)
   {
-      //std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_t0 << std::endl;
+      std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
       //std::cout << "FACI NEEDED until t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
-       facilitate_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp );
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       facilitate_(t, t0, t_until, cp );
   }
 
   // if potentitaion at t1
-  if (update_needed_t0 == 0 and update_needed_t1 == 1)
+  else if (update_needed_t0 == 0 and update_needed_t1 == 1)
   {
       //TODO this case should never happen! 
-      std::cout << "FACI NEEDED from t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_t0 << std::endl;
+      std::cout << "FACI NEEDED from t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
       std::cout << "FACI NEEDED from t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
-       facilitate_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       facilitate_(t, t_from, t1, cp);
   }
 
   // if depression at t0
-  if (update_needed_t0 == -1)
+  else if (update_needed_t0 == -1)
   {
       //std::cout << "DEPRE NEEDED" << std::endl;
-       depress_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp);
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       depress_(t, t0, t_until, cp);
   }
 
   // if depression at t1
-  if (update_needed_t0 == 0 and update_needed_t1 == -1)
+  else if (update_needed_t0 == 0 and update_needed_t1 == -1)
   {
       //std::cout << "DEPRE NEEDED from" << std::endl;
-       depress_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       depress_(t, t_from, t1, cp);
   }
 
   // if potentiation at t0 and depression at t1
-  if (update_needed_t0 == 1 and update_needed_t1 == -1)
+  else if (update_needed_t0 == 1 and update_needed_t1 == -1)
   {
       std::cout << "FACI AND DEPRE NEEDED" << std::endl;
-       facilitate_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp);
-       depress_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       facilitate_(t, t0, t_until, cp);
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       depress_(t, t_from, t1, cp);
   }
 
   // update Kplus_, Kminus_, n_ according to temporary values
@@ -622,6 +637,7 @@ StateReadoutConnection< targetidentifierT >::check_if_update_needed(
 {
 
   if (Kminus > cp.Kminus_threshold_ and Kplus > cp.Kplus_threshold_)
+  {
     if (n > cp.n_upper_threshold_)
     {
       //std::cout << "update needed facili " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
@@ -632,8 +648,8 @@ StateReadoutConnection< targetidentifierT >::check_if_update_needed(
       //std::cout << "update needed depp " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
       return -1; 
     }
+  }
   return 0;
-
 }
 
 template < typename targetidentifierT >
@@ -643,6 +659,7 @@ StateReadoutConnection< targetidentifierT >::calc_update_needed_from(
   double t1,
   const StateReadoutCommonProperties& cp )
 {
+  assert(t1 >= t0);
   double t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_lower_threshold_ / n_);
  // std::cout << t0 << " from " << std::min(t_threshold_cross_n, t1)<< std::endl;
   return t0 + std::min(t_threshold_cross_n, t1);
@@ -656,16 +673,27 @@ StateReadoutConnection< targetidentifierT >::calc_update_needed_until( thread t,
   double t1,
   const StateReadoutCommonProperties& cp )
 {
+  assert(t1 >= t0);
 
   Node* target = get_target( t );
   
-  double t_threshold_cross_K_minus = - target->get_tau_minus() * std::log(cp.Kminus_threshold_ / Kminus_);
+  double t_threshold_cross_K_minus = -target->get_tau_minus() * std::log(cp.Kminus_threshold_ / Kminus_);
+  if (t_threshold_cross_K_minus < 0){
+	std::cout <<  " km " <<  Kminus_ << " " << cp.Kminus_threshold_ << std::endl;
+  }
   double t_threshold_cross_K_plus = -cp.tau_plus_ * std::log(cp.Kplus_threshold_ / Kplus_);
+  if (t_threshold_cross_K_plus < 0){
+	std::cout << " kp " <<  Kplus_ << " " << cp.Kplus_threshold_ << std::endl;
+  }
 
 
   double t_threshold_cross_n = t1; 
   if (n_ > cp.n_upper_threshold_)
       t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_upper_threshold_ / n_);
+  
+  if (t_threshold_cross_n < 0){
+	std::cout << " n " <<  n_ << " " << cp.n_upper_threshold_ << std::endl;
+  }
 
   //std::cout << t0 << " until " << std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)))<< std::endl;
   return t0 + std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)));
