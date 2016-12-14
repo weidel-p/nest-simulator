@@ -379,6 +379,7 @@ public:
 private:
   void process_dopa_spikes_(
     thread t,
+    double t1,
     const std::vector< spikecounter >& dopa_spikes,
     const StateReadoutCommonProperties& cp);
 
@@ -564,24 +565,40 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   int update_needed_t1 = check_if_update_needed( Kplus_t1, Kminus_t1, n_t1, cp ); 
 
   // if potentitaion at t0
-  if (update_needed_t0 == 1)
+  if (update_needed_t0 == 1 and update_needed_t1 != -1)
+  {
+      //std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_t0 << std::endl;
+      //std::cout << "FACI NEEDED until t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
        facilitate_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp );
+  }
 
   // if potentitaion at t1
   if (update_needed_t0 == 0 and update_needed_t1 == 1)
+  {
+      //TODO this case should never happen! 
+      std::cout << "FACI NEEDED from t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_t0 << std::endl;
+      std::cout << "FACI NEEDED from t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
        facilitate_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
+  }
 
   // if depression at t0
   if (update_needed_t0 == -1)
+  {
+      //std::cout << "DEPRE NEEDED" << std::endl;
        depress_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp);
+  }
 
   // if depression at t1
   if (update_needed_t0 == 0 and update_needed_t1 == -1)
+  {
+      //std::cout << "DEPRE NEEDED from" << std::endl;
        depress_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
+  }
 
   // if potentiation at t0 and depression at t1
   if (update_needed_t0 == 1 and update_needed_t1 == -1)
   {
+      std::cout << "FACI AND DEPRE NEEDED" << std::endl;
        facilitate_(t, t0, calc_update_needed_until(t, t0, t1, cp), cp);
        depress_(t, calc_update_needed_from(t0, t1, cp), t1, cp);
   }
@@ -661,6 +678,7 @@ template < typename targetidentifierT >
 inline void
 StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
   thread t,
+  double t1,
   const std::vector< spikecounter >& dopa_spikes,
   const StateReadoutCommonProperties& cp )
 {
@@ -672,7 +690,7 @@ StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
   std::deque< histentry >::iterator finish;
 
   for(std::vector< spikecounter >::const_iterator it = dopa_spikes.begin(); it != dopa_spikes.end(); ++it) {
-    if (it->spike_time_ <= t_last_update_)
+    if (it->spike_time_ <= t_last_update_ or it->spike_time_ > t1)
         continue;
   
     // get history of postsynaptic neuron
@@ -723,10 +741,13 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   // get history of dopamine spikes
   const std::vector< spikecounter >& dopa_spikes = cp.vt_->deliver_spikes();
 
-  process_dopa_spikes_(t, dopa_spikes, cp);
+  process_dopa_spikes_(t, t_spike,  dopa_spikes, cp);
 
-  process_next_(t, t_last_update_, t_spike, cp);
-  t_last_update_ = t_spike;
+  if (t_spike > t_last_update_){
+  //    std::cout << "ERRER " << t_last_update_ << " " << t_spike << std::endl;
+      process_next_(t, t_last_update_, t_spike, cp);
+      t_last_update_ = t_spike;
+  }
 
 
   Kminus_ = target->get_K_value( t_spike);
@@ -752,7 +773,7 @@ StateReadoutConnection< targetidentifierT >::trigger_update_weight( thread t,
   const StateReadoutCommonProperties& cp )
 {
 
-  process_dopa_spikes_(t, dopa_spikes, cp);
+  process_dopa_spikes_(t, t_trig, dopa_spikes, cp);
   process_next_(t, t_last_update_, t_trig, cp);
   t_last_update_ = t_trig;
 
