@@ -245,6 +245,12 @@ public:
    */
   void set_weight( weight t );
 
+  double get_c() const;
+  void set_c( double k);
+
+  double get_dopa() const;
+  void set_dopa( double k);
+
   /**
    * Check integrity of the event.
    * This function returns true, if all data, in particular sender
@@ -270,6 +276,9 @@ protected:
                       */
   Node* sender_;     //!< Pointer to sender or NULL.
   Node* receiver_;   //!< Pointer to receiver or NULL.
+
+  double c_;
+  double dopa_;
 
 
   /**
@@ -1106,6 +1115,31 @@ Event::set_weight( weight w )
 {
   w_ = w;
 }
+
+inline double 
+Event::get_c() const
+{
+  return c_;
+}
+
+inline void
+Event::set_c( double k )
+{
+  c_ = k;
+}
+
+inline double 
+Event::get_dopa() const
+{
+  return dopa_;
+}
+
+inline void
+Event::set_dopa( double d )
+{
+  dopa_ = d;
+}
+
 
 inline Time const&
 Event::get_stamp() const

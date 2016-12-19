@@ -514,6 +514,8 @@ STDPDopaConnection< targetidentifierT >::send( Event& e,
   e.set_weight( weight_ );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
+  e.set_dopa( n_ );
+  e.set_c( c_);
   e();
 
   Kplus_ =
