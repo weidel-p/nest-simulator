@@ -570,7 +570,7 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   // if potentitaion at t0
   if (update_needed_t0 == 1 and update_needed_t1 != -1)
   {
-      std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
+      //std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
       //std::cout << "FACI NEEDED until t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
        double t_until = calc_update_needed_until(t, t0, t1, cp);
        assert(t_until >= t0);
@@ -737,7 +737,7 @@ StateReadoutConnection< targetidentifierT >::process_dopa_spikes_(
     }
     
     process_next_(t, t_last_update_, it->spike_time_, cp);
-    n_ += 1 / cp.tau_n_; //TODO consider multiplicity
+    n_ += it->multiplicity_ / cp.tau_n_; 
     // std::cout << "process dopa spike " << n_ << std::endl;
     t_last_update_ = it->spike_time_;
   }
