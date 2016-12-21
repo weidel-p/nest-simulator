@@ -415,7 +415,7 @@ private:
   /**
    * Print the weight of an event.
    */
-  void print_weight_( std::ostream&, double );
+  void print_weight_( std::ostream&, double, double, double );
 
   /**
    * Print the target gid of an event.
@@ -442,7 +442,7 @@ private:
    * @param store port of event
    * @param store rport of event
    */
-  void store_data_( index, const Time&, double, double, index, long, long );
+  void store_data_( index, const Time&, double, double, index, long, long, double, double );
 
   /**
    * Clear data in internal structure, and call clear_data_hook().
@@ -532,6 +532,8 @@ private:
     std::vector< long > event_senders_;     //!< List of event sender ids
     std::vector< long > event_targets_;     //!< List of event targets ids
     std::vector< long > event_ports_;       //!< List of event ports
+    std::vector< double > event_c_;       //!< List of event ports
+    std::vector< double > event_dopa_;       //!< List of event ports
     std::vector< long > event_rports_;      //!< List of event rports
     std::vector< double > event_times_ms_;  //!< List of event times in ms
     std::vector< long > event_times_steps_; //!< List of event times in steps
