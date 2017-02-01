@@ -1,5 +1,5 @@
 /*
- *  state_separation.h
+ *  state_separation_connection.h
  *
  *  This file is part of NEST.
  *
@@ -126,35 +126,58 @@
  *             propagate Kplus_, Kminus_, n_ to t_s in temporary variables 
  *             needed_t1 = check_if_update_weight_needed() 
  *
- *             if needed_t0 and needed_t1:
- *                  update_weight(t_last_update_, t_s)
- *             if needed_t0 and not needed_t1:
+ *             if needed_t0 == "facilitate":
  *                  t_update_until = calc_update_needed_until(t_s)
- *                  updated_weight(t_last_update_, t_update_until)
- *             if not needed_t0 and needed_t1:
+ *                  facilitate(t_last_update_, t_update_until)
+ *             if needed_t0 == "no update needed" and needed_t1 == "facilitate":
  *                  t_update_from = calc_update_needed_from(t_s)
- *                  update_weight(t_update_from, t_s)
+ *                  facilitate(t_update_from, t_s)
+ *             
+ *             if needed_t0 == "depress":
+ *                  t_update_until = calc_update_needed_until(t_s)
+ *                  depress(t_last_update_, t_update_until)
+ *             if needed_t0 == "no update needed" and needed_t1 == "depress":
+ *                  t_update_from = calc_update_needed_from(t_s)
+ *                  depress(t_update_from, t_s)
+ *             if needed_t0 == "facilitate" and needed_t1 == "depress":
+ *                  t_update_until = calc_update_needed_until(t_s)
+ *                  facilitate(t_last_update_, t_update_until)
+ *                  t_update_from = calc_update_needed_from(t_s)
+ *                  depress(t_update_from, t_s)
+ *            
+ *
  *             
  *             t_last_update_ = t_s
  *             update Kplus_, n_ according to temporary values
+ *             n_ += 1
+ *             Kplus += 1
  *
  *
  *
  * 
  * function check_if_update_weight_needed():
- *         if n_ > n_upper_threshold or n < n_lower_threshold:
+ *         if n_ > n_upper_threshold:
  *             if Kminus_ > Kminus_threshold and Kplus > Kplus_threshold:
- *                 true
+ *                 return "facilitate"
  *             else:
- *                 false
- *         else:
- *            false
+ *                 return "no update needed"
+ *         if n < n_lower_threshold:
+ *             if Kminus_ > Kminus_threshold and Kplus > Kplus_threshold:
+ *                 return "depress"
+ *             else:
+ *                 return "no update needed"
  *
  *
- *
- * function update_weight(t0, t1):
+ * function facilitate(t0, t1):
  *     dt = t1 - t0
- *     weight_ += Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
+ *     // additive rule
+ *     weight_ += A * Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
+ *
+ *
+ * function depress(t0, t1):
+ *     dt = t1 - t0
+ *     // additive rule
+ *     weight_ -= A *  Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
  *
  *
  *
@@ -225,13 +248,15 @@ public:
   long get_vt_gid() const;
 
   volume_transmitter* vt_;
-  double A_;
+  double Aplus_;
+  double Aminus_;
   double tau_plus_;
   double tau_n_;
   double b_;
+  double Kplus_threshold_;
+  double Kminus_threshold_;
   double n_upper_threshold_;
   double n_lower_threshold_;
-  double mean_firing_rate_;
   double Wmin_;
   double Wmax_;
 };
@@ -352,21 +377,48 @@ public:
   }
 
 private:
-  // update dopamine trace from last to current dopamine spike and increment
-  // index
-  void update_dopamine_( const std::vector< spikecounter >& dopa_spikes,
-    const StateSeparationCommonProperties& cp );
+  void process_dopa_spikes_(
+    thread t,
+    double t1,
+    const std::vector< spikecounter >& dopa_spikes,
+    const StateSeparationCommonProperties& cp);
 
-  void update_weight_(
-    double n0,
+  void facilitate_(
+    thread t,
+    double t0,
+    double t1,
+    const StateSeparationCommonProperties& cp);
+
+  void depress_(
+    thread t,
+    double t0,
+    double t1,
+    const StateSeparationCommonProperties& cp);
+
+  void process_next_(
+    thread t,
     double t0,
     double t1,
     const StateSeparationCommonProperties& cp );
 
-  void process_dopa_spikes_( const std::vector< spikecounter >& dopa_spikes,
+  double calc_update_needed_from(
     double t0,
     double t1,
     const StateSeparationCommonProperties& cp );
+
+  double calc_update_needed_until( thread t,
+    double t0,
+    double t1,
+    const StateSeparationCommonProperties& cp );
+
+  int check_if_update_needed(
+    double Kplus,
+    double Kminus,
+    double n,
+    const StateSeparationCommonProperties& cp );
+
+
+
 
   // data members of each connection
   double weight_;
@@ -374,14 +426,11 @@ private:
   double Kminus_;
   double n_;
 
-  // dopa_spikes_idx_ refers to the dopamine spike that has just been processes
-  // after trigger_update_weight a pseudo dopamine spike at t_trig is stored at
-  // index 0 and dopa_spike_idx_ = 0
-  index dopa_spikes_idx_;
 
   // time of last update, which is either time of last presyn. spike or
   // time-driven update
   double t_last_update_;
+  int dopa_spikes_idx_;
 };
 
 //
@@ -447,96 +496,255 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::update_dopamine_(
-  const std::vector< spikecounter >& dopa_spikes,
-  const StateSeparationCommonProperties& cp )
-{
-  double minus_dt = dopa_spikes[ dopa_spikes_idx_ ].spike_time_
-    - dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_;
-  ++dopa_spikes_idx_;
-  n_ = n_ * std::exp( minus_dt / cp.tau_n_ )
-    + dopa_spikes[ dopa_spikes_idx_ ].multiplicity_ / cp.tau_n_;
+StateSeparationConnection< targetidentifierT >::facilitate_(
+  thread t,
+  double t0,
+  double t1,
+  const StateSeparationCommonProperties& cp){
+
+  assert(t1 >= t0);
+  double dt = t1 - t0;
+  double tau_minus = get_target( t )->get_tau_minus();
+  
+  weight_ = cp.Wmax_ - (cp.Wmax_ - weight_)
+            * std::exp( -1/cp.Wmax_ * cp.Aplus_ * Kminus_ * Kplus_ / -(1/tau_minus + 1/cp.tau_plus_)
+            * (std::exp(-dt/tau_minus) * std::exp(-dt/cp.tau_plus_) - 1));
+
+  if ( weight_ > cp.Wmax_ ){
+    weight_ = cp.Wmax_;
+  }
+  //std::cout << "POTENTIATE " << weight_ << " n " << n_ << " kp " << Kplus_ << " km " << Kminus_ << " t0 " << t0 << " t1 " << t1 << std::endl;
+
 }
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::update_weight_( 
-  double n0,
+StateSeparationConnection< targetidentifierT >::depress_(
+  thread t,
+  double t0,
+  double t1,
+  const StateSeparationCommonProperties& cp){
+  
+  assert(t1 >= t0);
+  double dt = t1 - t0;
+  double tau_minus = get_target( t )->get_tau_minus();
+
+  weight_ = cp.Wmin_ + (weight_ - cp.Wmin_)
+            * std::exp( -1/cp.Wmin_ * cp.Aminus_ * Kminus_ * Kplus_ / -(1/tau_minus + 1/cp.tau_plus_)
+            * (std::exp(-dt/tau_minus) * std::exp(-dt/cp.tau_plus_) - 1));
+  
+  if ( weight_ < cp.Wmin_ )
+  {
+    weight_ = cp.Wmin_;
+  }
+  //std::cout << "DEPRESS " << weight_ << " n " << n_ << " kp " << Kplus_ << " km " << Kminus_ << " t0 " << t0 << " t1 " << t1 << std::endl;
+}
+
+
+
+template < typename targetidentifierT >
+inline void
+StateSeparationConnection< targetidentifierT >::process_next_(
+  thread t,
   double t0,
   double t1,
   const StateSeparationCommonProperties& cp )
 {
-//double kminus = get_target(0)->get_K_value( t1 - get_delay());
+  //std::cout << t0 << " " << t1 << std::endl;
+ 
+  assert(t1 >= t0);
+  Node* target = get_target( t );
 
-//std::cout <<  "n " << n0 << " n low " << cp.n_lower_threshold_ << " n up " << cp.n_upper_threshold_ << " a " << cp.A_ << " k- " << kminus << " k+ " << Kplus_ << " mean fr " << cp.mean_firing_rate_ << " weight " << weight_ << std::endl;
+  // update all traces to  t0
+  Kminus_ = target->get_K_value( t0 );
 
-    if (n0 > cp.n_upper_threshold_ || n0 < cp.n_lower_threshold_){
-        weight_ += cp.A_ * Kplus_ / cp.mean_firing_rate_ * (Kminus_ / cp.mean_firing_rate_ - 1.);
-    }
+  int update_needed_t0 = check_if_update_needed( Kplus_, Kminus_, n_, cp ); 
 
-  if ( weight_ < cp.Wmin_ )
-    weight_ = cp.Wmin_;
-  if ( weight_ > cp.Wmax_ )
-    weight_ = cp.Wmax_;
+  // propagate Kplus_, Kminus_, n_ to t1 in temporary variables 
+  double Kminus_t1 = Kminus_ * std::exp( ( t0 - t1 ) / target->get_tau_minus() );
+  double Kplus_t1 = Kplus_ * std::exp( ( t0 - t1 ) / cp.tau_plus_ );
+  double n_t1 = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
+
+  int update_needed_t1 = check_if_update_needed( Kplus_t1, Kminus_t1, n_t1, cp ); 
+
+  // if potentitaion at t0
+  if (update_needed_t0 == 1 and update_needed_t1 != -1)
+  {
+      //std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
+      //std::cout << "FACI NEEDED until t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       facilitate_(t, t0, t_until, cp );
+  }
+
+  // if potentitaion at t1
+  else if (update_needed_t0 == 0 and update_needed_t1 == 1)
+  {
+      //TODO this case should never happen! 
+      std::cout << "FACI NEEDED from t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
+      std::cout << "FACI NEEDED from t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       facilitate_(t, t_from, t1, cp);
+  }
+
+  // if depression at t0
+  else if (update_needed_t0 == -1)
+  {
+      //std::cout << "DEPRE NEEDED" << std::endl;
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       //depress_(t, t0, t_until, cp);
+       facilitate_(t, t0, t_until, cp);
+  }
+
+  // if depression at t1
+  else if (update_needed_t0 == 0 and update_needed_t1 == -1)
+  {
+      //std::cout << "DEPRE NEEDED from" << std::endl;
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       //depress_(t, t_from, t1, cp);
+       facilitate_(t, t_from, t1, cp);
+  }
+
+  // if potentiation at t0 and depression at t1
+  else if (update_needed_t0 == 1 and update_needed_t1 == -1)
+  {
+      std::cout << "FACI AND DEPRE NEEDED" << std::endl;
+       double t_until = calc_update_needed_until(t, t0, t1, cp);
+       assert(t_until >= t0);
+       facilitate_(t, t0, t_until, cp);
+       double t_from = calc_update_needed_from(t0, t1, cp);
+       assert(t1 >= t_from);
+       //depress_(t, t_from, t1, cp);
+       facilitate_(t, t_from, t1, cp);
+  }
+
+  // update Kplus_, Kminus_, n_ according to temporary values
+  Kplus_ = Kplus_t1;
+  Kminus_ = Kminus_t1;
+  n_ = n_t1;
+
+
 }
+
+
+template < typename targetidentifierT >
+inline int 
+StateSeparationConnection< targetidentifierT >::check_if_update_needed(
+  double Kplus,
+  double Kminus,
+  double n,
+  const StateSeparationCommonProperties& cp )
+{
+
+  if (Kminus > cp.Kminus_threshold_ and Kplus > cp.Kplus_threshold_)
+  {
+    if (n > cp.n_upper_threshold_)
+    {
+      //std::cout << "update needed facili " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
+      return 1; 
+    }
+    else if (n < cp.n_lower_threshold_)
+    {
+      //std::cout << "update needed depp " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
+      return -1; 
+    }
+  }
+  return 0;
+}
+
+template < typename targetidentifierT >
+inline double 
+StateSeparationConnection< targetidentifierT >::calc_update_needed_from(
+  double t0,
+  double t1,
+  const StateSeparationCommonProperties& cp )
+{
+  assert(t1 >= t0);
+  double t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_lower_threshold_ / n_);
+ // std::cout << t0 << " from " << std::min(t_threshold_cross_n, t1)<< std::endl;
+  return t0 + std::min(t_threshold_cross_n, t1);
+}
+
+
+template < typename targetidentifierT >
+inline double 
+StateSeparationConnection< targetidentifierT >::calc_update_needed_until( thread t,
+  double t0,
+  double t1,
+  const StateSeparationCommonProperties& cp )
+{
+  assert(t1 >= t0);
+
+  Node* target = get_target( t );
+  
+  double t_threshold_cross_K_minus = -target->get_tau_minus() * std::log(cp.Kminus_threshold_ / Kminus_);
+  if (t_threshold_cross_K_minus < 0){
+	std::cout <<  " km " <<  Kminus_ << " " << cp.Kminus_threshold_ << std::endl;
+  }
+  double t_threshold_cross_K_plus = -cp.tau_plus_ * std::log(cp.Kplus_threshold_ / Kplus_);
+  if (t_threshold_cross_K_plus < 0){
+	std::cout << " kp " <<  Kplus_ << " " << cp.Kplus_threshold_ << std::endl;
+  }
+
+
+  double t_threshold_cross_n = t1; 
+  if (n_ > cp.n_upper_threshold_)
+      t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_upper_threshold_ / n_);
+  
+  if (t_threshold_cross_n < 0){
+	std::cout << " n " <<  n_ << " " << cp.n_upper_threshold_ << std::endl;
+  }
+
+  //std::cout << t0 << " until " << std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)))<< std::endl;
+  return t0 + std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)));
+  
+}
+
+
 
 template < typename targetidentifierT >
 inline void
 StateSeparationConnection< targetidentifierT >::process_dopa_spikes_(
-  const std::vector< spikecounter >& dopa_spikes,
-  double t0,
+  thread t,
   double t1,
+  const std::vector< spikecounter >& dopa_spikes,
   const StateSeparationCommonProperties& cp )
 {
-  // process dopa spikes in (t0, t1]
-  // propagate weight from t0 to t1
-  if ( ( dopa_spikes.size() > dopa_spikes_idx_ + 1 )
-    && ( dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ <= t1 ) )
-  {
-    // there is at least 1 dopa spike in (t0, t1]
-    // propagate weight up to first dopa spike and update dopamine trace
-    // weight and eligibility c are at time t0 but dopamine trace n is at time
-    // of last dopa spike
-    double n0 =
-      n_ * std::exp( ( dopa_spikes[ dopa_spikes_idx_ ].spike_time_ - t0 )
-             / cp.tau_n_ ); // dopamine trace n at time t0
-    update_weight_(
-      n0, t0, dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_, cp );
-    update_dopamine_( dopa_spikes, cp );
 
-    // process remaining dopa spikes in (t0, t1]
-    double cd;
-    while ( ( dopa_spikes.size() > dopa_spikes_idx_ + 1 )
-      && ( dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ <= t1 ) )
+  Node* target = get_target( t );
+
+
+  std::deque< histentry >::iterator start;
+  std::deque< histentry >::iterator finish;
+
+  for(std::vector< spikecounter >::const_iterator it = dopa_spikes.begin(); it != dopa_spikes.end(); ++it) {
+    if (it->spike_time_ <= t_last_update_ or it->spike_time_ > t1)
+        continue;
+  
+    // get history of postsynaptic neuron
+    target->get_history( t_last_update_,
+    it->spike_time_,
+    &start,
+    &finish );
+    while ( start != finish )
     {
-      // propagate weight up to next dopa spike and update dopamine trace
-      // weight and dopamine trace n are at time of last dopa spike td but
-      // eligibility c is at time
-      // t0
-      update_weight_(
-        n_,
-        dopa_spikes[ dopa_spikes_idx_ ].spike_time_,
-        dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_,
-        cp );
-      update_dopamine_( dopa_spikes, cp );
-    }
+        //std::cout << "process post spike " << n_ << std::endl;
+       process_next_(t, t_last_update_, start->t_, cp);
 
-    // propagate weight up to t1
-    // weight and dopamine trace n are at time of last dopa spike td but
-    // eligibility c is at time t0
-       update_weight_(
-      n_, dopa_spikes[ dopa_spikes_idx_ ].spike_time_, t1, cp );
+       t_last_update_ = start->t_;
+       ++start;
+
+    }
+    
+    process_next_(t, t_last_update_, it->spike_time_, cp);
+    n_ += it->multiplicity_ / cp.tau_n_; 
+    // std::cout << "process dopa spike " << n_ << std::endl;
+    t_last_update_ = it->spike_time_;
   }
-  else
-  {
-    // no dopamine spikes in (t0, t1]
-    // weight and eligibility c are at time t0 but dopamine trace n is at time
-    // of last dopa spike
-    double n0 =
-      n_ * std::exp( ( dopa_spikes[ dopa_spikes_idx_ ].spike_time_ - t0 )
-             / cp.tau_n_ ); // dopamine trace n at time t0
-    update_weight_( n0, t0, t1, cp );
-  }
+
 
 
 }
@@ -554,51 +762,37 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
   double_t,
   const StateSeparationCommonProperties& cp )
 {
-  // t_lastspike_ = 0 initially
 
   Node* target = get_target( t );
-
-  // purely dendritic delay
-  double dendritic_delay = get_delay();
+  // t_lastspike_ = 0 initially
 
   double t_spike = e.get_stamp().get_ms();
+
 
   // get history of dopamine spikes
   const std::vector< spikecounter >& dopa_spikes = cp.vt_->deliver_spikes();
 
-  // get spike history in relevant range (t_last_update, t_spike] from
-  // post-synaptic neuron
-  std::deque< histentry >::iterator start;
-  std::deque< histentry >::iterator finish;
-  target->get_history( t_last_update_ - dendritic_delay,
-    t_spike - dendritic_delay,
-    &start,
-    &finish );
+  process_dopa_spikes_(t, t_spike,  dopa_spikes, cp);
 
-  double t0 = t_last_update_;
-  double minus_dt;
-  while ( start != finish )
-  {
-    process_dopa_spikes_( dopa_spikes, t0, start->t_ + dendritic_delay, cp );
-    t0 = start->t_ + dendritic_delay;
-    minus_dt = t_last_update_ - t0;
-    if ( start->t_ < t_spike ) 
-      Kminus_ = target->get_K_value( start->t_ - dendritic_delay );
-    ++start;
+  if (t_spike > t_last_update_){
+  //    std::cout << "ERRER " << t_last_update_ << " " << t_spike << std::endl;
+      process_next_(t, t_last_update_, t_spike, cp);
+      t_last_update_ = t_spike;
   }
 
-  // depression due to new pre-synaptic spike
-  process_dopa_spikes_( dopa_spikes, t0, t_spike, cp );
-  Kminus_ = target->get_K_value( t_spike - dendritic_delay );
+
+  Kminus_ = target->get_K_value( t_spike);
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
+  e.set_Kplus( Kplus_ );
+  e.set_Kminus( Kminus_ );
+  e.set_dopa( n_ );
   e();
 
-  Kplus_ =
-    Kplus_ * std::exp( ( t_last_update_ - t_spike ) / cp.tau_plus_ ) + 1.0;
+  Kplus_ += 1.;
   t_last_update_ = t_spike;
 }
 
@@ -609,46 +803,17 @@ StateSeparationConnection< targetidentifierT >::trigger_update_weight( thread t,
   const double t_trig,
   const StateSeparationCommonProperties& cp )
 {
-  // propagate all state variables to time t_trig
-  // this does not include the depression trace K_minus, which is updated in the
-  // postsyn. neuron
-  Node* target = get_target( t );
 
-  // purely dendritic delay
-  double dendritic_delay = get_delay();
-
-  // get spike history in relevant range (t_last_update, t_trig] from postsyn.
-  // neuron
-  std::deque< histentry >::iterator start;
-  std::deque< histentry >::iterator finish;
-  get_target( t )->get_history( t_last_update_ - dendritic_delay,
-    t_trig - dendritic_delay,
-    &start,
-    &finish );
-
-  // facilitation due to postsyn. spikes since last update
-  double t0 = t_last_update_;
-  double minus_dt;
-  while ( start != finish )
-  {
-    process_dopa_spikes_( dopa_spikes, t0, start->t_ + dendritic_delay, cp );
-    t0 = start->t_ + dendritic_delay;
-    minus_dt = t_last_update_ - t0;
-    Kminus_ = target->get_K_value( start->t_ - dendritic_delay);
-    ++start;
-  }
-
-  // propagate weight, eligibility trace c, dopamine trace n and facilitation
-  // trace K_plus to time t_trig but do not increment/decrement as there are no
-  // spikes to be handled at t_trig
-  process_dopa_spikes_( dopa_spikes, t0, t_trig, cp );
-  n_ = n_ * std::exp( ( dopa_spikes[ dopa_spikes_idx_ ].spike_time_ - t_trig )
-              / cp.tau_n_ );
-  Kplus_ = Kplus_ * std::exp( ( t_last_update_ - t_trig ) / cp.tau_plus_ );
-
+  process_dopa_spikes_(t, t_trig, dopa_spikes, cp);
+  process_next_(t, t_last_update_, t_trig, cp);
   t_last_update_ = t_trig;
-  dopa_spikes_idx_ = 0;
+
+
 }
+
+
+
+
 
 } // of namespace nest
 
