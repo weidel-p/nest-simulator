@@ -219,7 +219,8 @@ ConnectorBase::send_weight_event( const CommonSynapseProperties& cp,
     wr_e.set_sender( e.get_sender() );
     wr_e.set_sender_gid( e.get_sender_gid() );
     wr_e.set_weight( e.get_weight() );
-    wr_e.set_Kminus( e.get_Kminus() );
+    wr_e.set_Kminus_short( e.get_Kminus_short() );
+    wr_e.set_Kminus_long( e.get_Kminus_long() );
     wr_e.set_Kplus( e.get_Kplus() );
     wr_e.set_dopa( e.get_dopa() );
     wr_e.set_delay( e.get_delay() );

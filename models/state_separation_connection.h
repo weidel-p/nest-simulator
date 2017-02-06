@@ -249,10 +249,10 @@ public:
 
   volume_transmitter* vt_;
   double A_;
-  double tau_plus_;
+  double tau_short_;
+  double tau_long_;
   double tau_n_;
   double b_;
-  double Kminus_threshold_;
   double n_threshold_;
   double Wmin_;
   double Wmax_;
@@ -389,8 +389,10 @@ private:
 
   // data members of each connection
   double weight_;
-  double Kplus_;
-  double Kminus_;
+  double Kplus_short_;
+  double Kplus_long_;
+  double Kminus_short_;
+  double Kminus_long_;
   double n_;
 
 
@@ -408,8 +410,10 @@ template < typename targetidentifierT >
 StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
   : ConnectionBase()
   , weight_( 1.0 )
-  , Kplus_( 0.0 )
-  , Kminus_( 0.0 )
+  , Kplus_short_( 0.0 )
+  , Kplus_long_( 0.0 )
+  , Kminus_short_( 0.0 )
+  , Kminus_long_( 0.0 )
   , n_( 0.0 )
   , dopa_spikes_idx_( 0 )
   , t_last_update_( 0.0 )
@@ -421,8 +425,10 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
   const StateSeparationConnection& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
-  , Kplus_( rhs.Kplus_ )
-  , Kminus_( rhs.Kminus_)
+  , Kplus_short_( rhs.Kplus_short_ )
+  , Kplus_long_( rhs.Kplus_long_ )
+  , Kminus_short_( rhs.Kminus_short_)
+  , Kminus_long_( rhs.Kminus_long_)
   , n_( rhs.n_ )
   , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
   , t_last_update_( rhs.t_last_update_ )
@@ -440,8 +446,10 @@ StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d )
 
   // own properties, different for individual synapse
   def< double >( d, "n", n_ );
-  def< double >( d, "Kplus", Kplus_ );
-  def< double >( d, "Kminus", Kminus_);
+  def< double >( d, "Kplus_short", Kplus_short_ );
+  def< double >( d, "Kplus_long", Kplus_long_ );
+  def< double >( d, "Kminus_short", Kminus_short_);
+  def< double >( d, "Kminus_long", Kminus_long_);
 }
 
 template < typename targetidentifierT >
@@ -454,8 +462,10 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
   updateValue< double >( d, names::weight, weight_ );
 
   updateValue< double >( d, "n", n_ );
-  updateValue< double >( d, "Kplus", Kplus_ );
-  updateValue< double >( d, "Kminus", Kminus_);
+  updateValue< double >( d, "Kplus_short", Kplus_short_ );
+  updateValue< double >( d, "Kplus_long", Kplus_long_ );
+  updateValue< double >( d, "Kminus_short", Kminus_short_);
+  updateValue< double >( d, "Kminus_long", Kminus_long_);
 }
 
 
@@ -475,11 +485,14 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   Node* target = get_target( t );
 
   // update all traces to  t0
-  Kminus_ = target->get_K_value( t0 );
+  Kminus_short_ = target->get_firing_rate_short( t0 );
+  Kminus_long_= target->get_firing_rate_long( t0 );
+
+
 
   // update weight with forward euler
-  weight_ += cp.A_ * Kplus_ * 
-             (Kminus_ - cp.Kminus_threshold_) * std::abs(n_ - cp.n_threshold_) * (t1 - t0); 
+  weight_ += cp.A_ * Kplus_short_ * 
+             (Kminus_short_ - Kminus_long_) * std::abs(n_ - cp.n_threshold_) * (t1 - t0); 
 
   if ( weight_ > cp.Wmax_ ){
     weight_ = cp.Wmax_;
@@ -487,8 +500,12 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   if ( weight_ < cp.Wmin_){
     weight_ = cp.Wmin_;
   }
+
   // propagate Kplus_, Kminus_, n_ to t1 
-  Kplus_ = Kplus_ * std::exp( ( t0 - t1 ) / cp.tau_plus_ );
+  Kplus_short_ *= std::exp( ( t0 - t1 ) / cp.tau_short_ );
+  //Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
+
+
   n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
 
 
@@ -574,18 +591,21 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
   }
 
 
-  Kminus_ = target->get_K_value( t_spike );
+  Kminus_short_ = target->get_firing_rate_short( t_spike );
+  Kminus_long_ = target->get_firing_rate_long( t_spike );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
-  e.set_Kplus( Kplus_ );
-  e.set_Kminus( Kminus_ );
+  e.set_Kplus( Kplus_short_ );
+  e.set_Kminus_short( Kminus_short_ );
+  e.set_Kminus_long( Kminus_long_ );
   e.set_dopa( n_ );
   e();
 
-  Kplus_ += 1.;
+  Kplus_short_ += 1./cp.tau_short_;
+  //Kplus_long_ += 1./cp.tau_long_;
   t_last_update_ = t_spike;
 }
 

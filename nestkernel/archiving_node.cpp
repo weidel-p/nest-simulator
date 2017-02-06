@@ -48,6 +48,8 @@ nest::Archiving_Node::Archiving_Node()
   , Ca_minus_( 0.0 )
   , tau_Ca_( 10000.0 )
   , beta_Ca_( 0.001 )
+  , tau_rate_short_( 100.0 )
+  , tau_rate_long_( 10000.0 )
   , synaptic_elements_map_()
 {
 }
@@ -64,6 +66,8 @@ nest::Archiving_Node::Archiving_Node( const Archiving_Node& n )
   , Ca_minus_( n.Ca_minus_ )
   , tau_Ca_( n.tau_Ca_ )
   , beta_Ca_( n.beta_Ca_ )
+  , tau_rate_short_( n.tau_rate_short_)
+  , tau_rate_long_( n.tau_rate_long_)
   , synaptic_elements_map_( n.synaptic_elements_map_ )
 {
 }
@@ -100,6 +104,47 @@ nest::Archiving_Node::get_K_value( double t )
     {
       return ( history_[ i ].Kminus_
         * std::exp( ( history_[ i ].t_ - t ) / tau_minus_ ) );
+    }
+    i--;
+  }
+  return 0;
+}
+
+double
+nest::Archiving_Node::get_firing_rate_short( double t )
+{
+  if ( history_.empty() )
+  {
+    return firing_rate_short_;
+  }
+  int i = history_.size() - 1;
+  while ( i >= 0 )
+  {
+    if ( t > history_[ i ].t_ )
+    {
+      return ( history_[ i ].firing_rate_short_
+        * std::exp( ( history_[ i ].t_ - t ) / tau_rate_short_) );
+    }
+    i--;
+  }
+  return 0;
+}
+
+
+double
+nest::Archiving_Node::get_firing_rate_long( double t )
+{
+  if ( history_.empty() )
+  {
+    return firing_rate_long_;
+  }
+  int i = history_.size() - 1;
+  while ( i >= 0 )
+  {
+    if ( t > history_[ i ].t_ )
+    {
+      return ( history_[ i ].firing_rate_long_
+        * std::exp( ( history_[ i ].t_ - t ) / tau_rate_long_) );
     }
     i--;
   }
@@ -202,8 +247,16 @@ nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
     triplet_Kminus_ = triplet_Kminus_
         * std::exp( ( last_spike_ - t_sp_ms ) / tau_minus_triplet_ )
       + 1.0;
+    
+
+    firing_rate_short_ =
+      firing_rate_short_ * std::exp( ( last_spike_ - t_sp_ms ) / tau_rate_short_ ) + 1.0 / tau_rate_short_;
+
+    firing_rate_long_ =
+      firing_rate_long_ * std::exp( ( last_spike_ - t_sp_ms ) / tau_rate_long_) + 1.0 / tau_rate_long_;
+
     last_spike_ = t_sp_ms;
-    history_.push_back( histentry( last_spike_, Kminus_, triplet_Kminus_, 0 ) );
+    history_.push_back( histentry( last_spike_, Kminus_, triplet_Kminus_, 0, firing_rate_short_, firing_rate_long_ ) );
   }
   else
   {
@@ -219,6 +272,8 @@ nest::Archiving_Node::get_status( DictionaryDatum& d ) const
 
   def< double >( d, names::t_spike, get_spiketime_ms() );
   def< double >( d, names::tau_minus, tau_minus_ );
+  def< double >( d, "tau_rate_short", tau_rate_short_ );
+  def< double >( d, "tau_rate_long", tau_rate_long_ );
   def< double >( d, names::Ca, Ca_minus_ );
   def< double >( d, names::tau_Ca, tau_Ca_ );
   def< double >( d, names::beta_Ca, beta_Ca_ );
@@ -247,12 +302,16 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   // We need to preserve values in case invalid values are set
   double new_tau_minus = tau_minus_;
   double new_tau_minus_triplet = tau_minus_triplet_;
+  double new_tau_rate_short = tau_rate_short_;
+  double new_tau_rate_long = tau_rate_long_;
   double new_tau_Ca = tau_Ca_;
   double new_beta_Ca = beta_Ca_;
   updateValue< double >( d, names::tau_minus, new_tau_minus );
   updateValue< double >( d, names::tau_minus_triplet, new_tau_minus_triplet );
   updateValue< double >( d, names::tau_Ca, new_tau_Ca );
   updateValue< double >( d, names::beta_Ca, new_beta_Ca );
+  updateValue< double >( d, "tau_rate_short", new_tau_rate_short );
+  updateValue< double >( d, "tau_rate_long", new_tau_rate_long);
 
   if ( new_tau_minus <= 0.0 || new_tau_minus_triplet <= 0.0 )
   {
@@ -261,6 +320,8 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
 
   tau_minus_ = new_tau_minus;
   tau_minus_triplet_ = new_tau_minus_triplet;
+  tau_rate_short_ = new_tau_rate_short;
+  tau_rate_long_ = new_tau_rate_long;
 
   if ( new_tau_Ca <= 0.0 )
   {

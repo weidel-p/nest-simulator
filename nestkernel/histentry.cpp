@@ -42,3 +42,18 @@ nest::histentry::histentry( double t,
   , access_counter_( access_counter )
 {
 }
+
+nest::histentry::histentry( double t,
+  double Kminus,
+  double triplet_Kminus,
+  size_t access_counter,
+  double firing_rate_short,
+  double firing_rate_long )
+  : t_( t )
+  , Kminus_( Kminus )
+  , triplet_Kminus_( triplet_Kminus )
+  , firing_rate_short_( firing_rate_short )
+  , firing_rate_long_( firing_rate_long )
+  , access_counter_( access_counter )
+{
+}

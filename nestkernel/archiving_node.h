@@ -181,6 +181,13 @@ public:
    */
   double get_tau_minus();
 
+  /**
+   * \fn double get_K_value(long t)
+   * return the Kminus value at t (in ms).
+   */
+  double get_firing_rate_short( double t );
+  double get_firing_rate_long( double t );
+
 protected:
   /**
    * \fn void set_spiketime(Time const & t_sp, double offset)
@@ -218,6 +225,11 @@ private:
   double tau_minus_triplet_;
 
   double last_spike_;
+
+  double firing_rate_short_;
+  double firing_rate_long_;
+  double tau_rate_short_;
+  double tau_rate_long_;
 
   // spiking history needed by stdp synapses
   std::deque< histentry > history_;

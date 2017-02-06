@@ -771,6 +771,9 @@ public:
     buffers_initialized_ = initialized;
   }
 
+  virtual double get_firing_rate_short( double t );
+  virtual double get_firing_rate_long( double t );
+
 private:
   void set_lid_( index );      //!< Set local id, relative to the parent subnet
   void set_parent_( Subnet* ); //!< Set pointer to parent subnet.

@@ -41,10 +41,10 @@ StateSeparationCommonProperties::StateSeparationCommonProperties()
   : CommonSynapseProperties()
   , vt_( 0 )
   , A_( 0.1 )
-  , tau_plus_( 20.0 )
+  , tau_short_( 100.0 )
+  , tau_long_( 10000.0 )
   , tau_n_( 20.0 )
   , b_( 0.0 )
-  , Kminus_threshold_( 5.0 )
   , n_threshold_( 2.0 )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
@@ -62,10 +62,10 @@ StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
     def< long >( d, "vt", -1 );
 
   def< double >( d, "A", A_);
-  def< double >( d, "tau_plus", tau_plus_ );
+  def< double >( d, "tau_short", tau_short_ );
+  def< double >( d, "tau_long", tau_long_ );
   def< double >( d, "tau_n", tau_n_ );
   def< double >( d, "b", b_ );
-  def< double >( d, "Kminus_threshold", Kminus_threshold_ );
   def< double >( d, "n_threshold", n_threshold_ );
   def< double >( d, "Wmin", Wmin_ );
   def< double >( d, "Wmax", Wmax_ );
@@ -88,10 +88,10 @@ StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
   }
 
   updateValue< double >( d, "A", A_);
-  updateValue< double >( d, "tau_plus", tau_plus_ );
+  updateValue< double >( d, "tau_short", tau_short_);
+  updateValue< double >( d, "tau_long", tau_long_);
   updateValue< double >( d, "tau_n", tau_n_ );
   updateValue< double >( d, "b", b_ );
-  updateValue< double >( d, "Kminus_threshold", Kminus_threshold_ );
   updateValue< double >( d, "n_threshold", n_threshold_ );
   updateValue< double >( d, "Wmin", Wmin_ );
   updateValue< double >( d, "Wmax", Wmax_ );

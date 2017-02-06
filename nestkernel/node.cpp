@@ -350,13 +350,25 @@ Node::sends_secondary_event( GapJunctionEvent& )
   throw IllegalConnection();
 }
 
-
 double
 Node::get_K_value( double )
 {
   throw UnexpectedEvent();
 }
 
+double
+Node::get_firing_rate_short( double )
+{
+    std::cout << " AAAAAAAAAAAAAAA " << std::endl;
+  throw UnexpectedEvent();
+}
+
+double
+Node::get_firing_rate_long( double )
+{
+    std::cout << " BBBBBAAAAAAAAAA " << std::endl;
+  throw UnexpectedEvent();
+}
 
 void
 Node::get_K_values( double, double&, double& )

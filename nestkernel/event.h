@@ -248,8 +248,11 @@ public:
   double get_Kplus() const;
   void set_Kplus( double k);
 
-  double get_Kminus() const;
-  void set_Kminus( double k);
+  double get_Kminus_short() const;
+  void set_Kminus_short( double k);
+
+  double get_Kminus_long() const;
+  void set_Kminus_long( double k);
 
   double get_dopa() const;
   void set_dopa( double k);
@@ -281,7 +284,8 @@ protected:
   Node* receiver_;   //!< Pointer to receiver or NULL.
 
   double Kplus_;
-  double Kminus_;
+  double Kminus_short_;
+  double Kminus_long_;
   double dopa_;
 
 
@@ -1133,15 +1137,27 @@ Event::set_Kplus( double k )
 }
 
 inline double 
-Event::get_Kminus() const
+Event::get_Kminus_short() const
 {
-  return Kminus_;
+  return Kminus_short_;
 }
 
 inline void
-Event::set_Kminus( double k )
+Event::set_Kminus_short( double k )
 {
-  Kminus_ = k;
+  Kminus_short_ = k;
+}
+
+inline double 
+Event::get_Kminus_long() const
+{
+  return Kminus_long_;
+}
+
+inline void
+Event::set_Kminus_long( double k )
+{
+  Kminus_long_ = k;
 }
 
 inline double 

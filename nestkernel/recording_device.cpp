@@ -307,8 +307,11 @@ nest::RecordingDevice::State_::get( DictionaryDatum& d,
     initialize_property_doublevector( dict, "Kplus");
     append_property( dict, "Kplus", std::vector< double >( event_kplus_ ) );
 
-    initialize_property_doublevector( dict, "Kminus" );
-    append_property( dict, "Kminus", std::vector< double >( event_kminus_ ) );
+    initialize_property_doublevector( dict, "Kminus_short" );
+    append_property( dict, "Kminus_short", std::vector< double >( event_kminus_short_ ) );
+
+    initialize_property_doublevector( dict, "Kminus_long" );
+    append_property( dict, "Kminus_long", std::vector< double >( event_kminus_long_ ) );
 
     initialize_property_doublevector( dict, "dopa" );
     append_property( dict, "dopa", std::vector< double >( event_dopa_ ) );
@@ -656,7 +659,8 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
   const long port = event.get_port();
   const long rport = event.get_rport();
   const double kplus = event.get_Kplus();
-  const double kminus = event.get_Kminus();
+  const double kminus_short = event.get_Kminus_short();
+  const double kminus_long = event.get_Kminus_long();
   const double dopa = event.get_dopa();
 
   index receiver = -1;
@@ -681,7 +685,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
     print_port_( std::cout, port );
     print_rport_( std::cout, rport );
     print_time_( std::cout, stamp, offset );
-    print_weight_( std::cout, weight, kplus, kminus, dopa );
+    print_weight_( std::cout, weight, kplus, kminus_short, kminus_long, dopa );
     if ( endrecord )
       std::cout << '\n';
   }
@@ -693,7 +697,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
     print_port_( B_.fs_, port );
     print_rport_( B_.fs_, rport );
     print_time_( B_.fs_, stamp, offset );
-    print_weight_( B_.fs_, weight, kplus, kminus, dopa );
+    print_weight_( B_.fs_, weight, kplus, kminus_short, kminus_long, dopa );
     if ( endrecord )
     {
       B_.fs_ << '\n';
@@ -705,7 +709,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
   // storing data when recording to accumulator relies on the fact
   // that multimeter will call us only once per accumulation step
   if ( P_.to_memory_ || P_.to_accumulator_ )
-    store_data_( sender, stamp, offset, weight, receiver, port, rport, kplus, kminus, dopa );
+    store_data_( sender, stamp, offset, weight, receiver, port, rport, kplus, kminus_short, kminus_long, dopa );
 }
 
 void
@@ -736,12 +740,13 @@ nest::RecordingDevice::print_time_( std::ostream& os,
 }
 
 void
-nest::RecordingDevice::print_weight_( std::ostream& os, double weight, double kp, double km, double dopa )
+nest::RecordingDevice::print_weight_( std::ostream& os, double weight, double kp, double km_s, double km_l, double dopa )
 {
   if ( P_.withweight_ )
     os << weight << '\t';
     os << kp << '\t';
-    os << km << '\t';
+    os << km_s << '\t';
+    os << km_l << '\t';
     os << dopa << '\t';
 }
 
@@ -775,7 +780,8 @@ nest::RecordingDevice::store_data_( index sender,
   long port,
   long rport,
  double kplus,
-double kminus,
+double kminus_short,
+double kminus_long,
 double dopa)
 {
   if ( P_.withgid_ )
@@ -805,7 +811,8 @@ double dopa)
   {
     S_.event_ports_.push_back( port );
     S_.event_kplus_.push_back( kplus );
-    S_.event_kminus_.push_back( kminus );
+    S_.event_kminus_short_.push_back( kminus_short );
+    S_.event_kminus_long_.push_back( kminus_long );
     S_.event_dopa_.push_back( dopa );
   }
 
@@ -855,7 +862,8 @@ nest::RecordingDevice::State_::clear_events()
   event_receivers_.clear();
   event_ports_.clear();
   event_kplus_.clear();
-  event_kminus_.clear();
+  event_kminus_short_.clear();
+  event_kminus_long_.clear();
   event_dopa_.clear();
   event_rports_.clear();
 }
