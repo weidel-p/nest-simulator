@@ -245,8 +245,11 @@ public:
    */
   void set_weight( weight t );
 
-  double get_Kplus() const;
-  void set_Kplus( double k);
+  double get_Kplus_short() const;
+  void set_Kplus_short( double k);
+
+  double get_Kplus_long() const;
+  void set_Kplus_long( double k);
 
   double get_Kminus_short() const;
   void set_Kminus_short( double k);
@@ -283,7 +286,8 @@ protected:
   Node* sender_;     //!< Pointer to sender or NULL.
   Node* receiver_;   //!< Pointer to receiver or NULL.
 
-  double Kplus_;
+  double Kplus_short_;
+  double Kplus_long_;
   double Kminus_short_;
   double Kminus_long_;
   double dopa_;
@@ -1125,15 +1129,27 @@ Event::set_weight( weight w )
 }
 
 inline double 
-Event::get_Kplus() const
+Event::get_Kplus_short() const
 {
-  return Kplus_;
+  return Kplus_short_;
 }
 
 inline void
-Event::set_Kplus( double k )
+Event::set_Kplus_short( double k )
 {
-  Kplus_ = k;
+  Kplus_short_ = k;
+}
+
+inline double 
+Event::get_Kplus_long() const
+{
+  return Kplus_long_;
+}
+
+inline void
+Event::set_Kplus_long( double k )
+{
+  Kplus_long_ = k;
 }
 
 inline double 

@@ -23,7 +23,7 @@
 #ifndef STATE_READOUT_H
 #define STATE_READOUT_H
 
-/* BeginDocumentation
+/* BeginDocumentatio double,n
 
    Name: stdp_dopamine_synapse - Synapse type for dopamine-modulated
                                  spike-timing dependent plasticity.
@@ -486,13 +486,13 @@ StateReadoutConnection< targetidentifierT >::process_next_(
 
   // update all traces to  t0
   Kminus_short_ = target->get_firing_rate_short( t0 );
-  Kminus_long_= target->get_firing_rate_long( t0 );
+  Kminus_long_ = target->get_firing_rate_long( t0 );
 
 
 
   // update weight with forward euler
-  weight_ += cp.A_ * Kplus_short_ * 
-             (Kminus_short_ - Kminus_long_) * (n_ - cp.n_threshold_) * (t1 - t0); 
+  weight_ += cp.A_ * (Kplus_short_ * Kminus_short_ - Kplus_long_ * Kminus_long_) * 
+                     (n_ - cp.n_threshold_) * (t1 - t0); 
 
   if ( weight_ > cp.Wmax_ ){
     weight_ = cp.Wmax_;
@@ -503,13 +503,10 @@ StateReadoutConnection< targetidentifierT >::process_next_(
 
   // propagate Kplus_, Kminus_, n_ to t1 
   Kplus_short_ *= std::exp( ( t0 - t1 ) / cp.tau_short_ );
-  //Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
+  Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
 
 
   n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
-
-
-
 
 }
 
@@ -599,14 +596,15 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   e.set_weight( weight_ );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
-  e.set_Kplus( Kplus_short_ );
+  e.set_Kplus_short( Kplus_short_ );
+  e.set_Kplus_long( Kplus_long_ );
   e.set_Kminus_short( Kminus_short_ );
   e.set_Kminus_long( Kminus_long_ );
   e.set_dopa( n_ );
   e();
 
   Kplus_short_ += 1./cp.tau_short_;
-  //Kplus_long_ += 1./cp.tau_long_;
+  Kplus_long_ += 1./cp.tau_long_;
   t_last_update_ = t_spike;
 }
 

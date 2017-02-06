@@ -304,8 +304,13 @@ nest::RecordingDevice::State_::get( DictionaryDatum& d,
     append_property(
       dict, names::weights, std::vector< double >( event_weights_ ) );
 
-    initialize_property_doublevector( dict, "Kplus");
-    append_property( dict, "Kplus", std::vector< double >( event_kplus_ ) );
+
+    initialize_property_doublevector( dict, "Kplus_short" );
+    append_property( dict, "Kplus_short", std::vector< double >( event_kplus_short_ ) );
+
+    initialize_property_doublevector( dict, "Kplus_long" );
+    append_property( dict, "Kplus_long", std::vector< double >( event_kplus_long_ ) );
+
 
     initialize_property_doublevector( dict, "Kminus_short" );
     append_property( dict, "Kminus_short", std::vector< double >( event_kminus_short_ ) );
@@ -658,7 +663,8 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
   const double weight = event.get_weight();
   const long port = event.get_port();
   const long rport = event.get_rport();
-  const double kplus = event.get_Kplus();
+  const double kplus_short = event.get_Kplus_short();
+  const double kplus_long = event.get_Kplus_long();
   const double kminus_short = event.get_Kminus_short();
   const double kminus_long = event.get_Kminus_long();
   const double dopa = event.get_dopa();
@@ -685,7 +691,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
     print_port_( std::cout, port );
     print_rport_( std::cout, rport );
     print_time_( std::cout, stamp, offset );
-    print_weight_( std::cout, weight, kplus, kminus_short, kminus_long, dopa );
+    print_weight_( std::cout, weight, kplus_short, kplus_long, kminus_short, kminus_long, dopa );
     if ( endrecord )
       std::cout << '\n';
   }
@@ -697,7 +703,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
     print_port_( B_.fs_, port );
     print_rport_( B_.fs_, rport );
     print_time_( B_.fs_, stamp, offset );
-    print_weight_( B_.fs_, weight, kplus, kminus_short, kminus_long, dopa );
+    print_weight_( B_.fs_, weight, kplus_short, kplus_long, kminus_short, kminus_long, dopa );
     if ( endrecord )
     {
       B_.fs_ << '\n';
@@ -709,7 +715,7 @@ nest::RecordingDevice::record_event( const Event& event, bool endrecord )
   // storing data when recording to accumulator relies on the fact
   // that multimeter will call us only once per accumulation step
   if ( P_.to_memory_ || P_.to_accumulator_ )
-    store_data_( sender, stamp, offset, weight, receiver, port, rport, kplus, kminus_short, kminus_long, dopa );
+    store_data_( sender, stamp, offset, weight, receiver, port, rport, kplus_short, kplus_long, kminus_short, kminus_long, dopa );
 }
 
 void
@@ -740,11 +746,12 @@ nest::RecordingDevice::print_time_( std::ostream& os,
 }
 
 void
-nest::RecordingDevice::print_weight_( std::ostream& os, double weight, double kp, double km_s, double km_l, double dopa )
+nest::RecordingDevice::print_weight_( std::ostream& os, double weight, double kp_s, double kp_l, double km_s, double km_l, double dopa )
 {
   if ( P_.withweight_ )
     os << weight << '\t';
-    os << kp << '\t';
+    os << kp_s << '\t';
+    os << kp_l << '\t';
     os << km_s << '\t';
     os << km_l << '\t';
     os << dopa << '\t';
@@ -779,7 +786,8 @@ nest::RecordingDevice::store_data_( index sender,
   index receiver,
   long port,
   long rport,
- double kplus,
+double kplus_short,
+double kplus_long,
 double kminus_short,
 double kminus_long,
 double dopa)
@@ -810,7 +818,8 @@ double dopa)
   if ( P_.withport_ )
   {
     S_.event_ports_.push_back( port );
-    S_.event_kplus_.push_back( kplus );
+    S_.event_kplus_short_.push_back( kplus_short );
+    S_.event_kplus_long_.push_back( kplus_long );
     S_.event_kminus_short_.push_back( kminus_short );
     S_.event_kminus_long_.push_back( kminus_long );
     S_.event_dopa_.push_back( dopa );
@@ -861,7 +870,8 @@ nest::RecordingDevice::State_::clear_events()
   event_weights_.clear();
   event_receivers_.clear();
   event_ports_.clear();
-  event_kplus_.clear();
+  event_kplus_short_.clear();
+  event_kplus_long_.clear();
   event_kminus_short_.clear();
   event_kminus_long_.clear();
   event_dopa_.clear();

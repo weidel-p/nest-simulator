@@ -414,7 +414,7 @@ private:
   /**
    * Print the weight of an event.
    */
-  void print_weight_( std::ostream&, double, double, double, double, double );
+  void print_weight_( std::ostream&, double, double, double, double, double, double );
 
   /**
    * Print the receiver gid of an event.
@@ -434,7 +434,7 @@ private:
   /**
    * Store data in internal structure.
    */
-  void store_data_( index, const Time&, double, double, index, long, long, double, double, double, double );
+  void store_data_( index, const Time&, double, double, index, long, long, double, double, double, double, double );
 
   /**
    * Clear data in internal structure, and call clear_data_hook().
@@ -524,7 +524,8 @@ private:
     std::vector< long > event_senders_;     //!< List of event sender ids
     std::vector< long > event_receivers_;   //!< List of event receivers ids
     std::vector< long > event_ports_;       //!< List of event ports
-    std::vector< double > event_kplus_;       //!< List of event ports
+    std::vector< double > event_kplus_short_;       //!< List of event ports
+    std::vector< double > event_kplus_long_;       //!< List of event ports
     std::vector< double > event_kminus_short_;       //!< List of event ports
     std::vector< double > event_kminus_long_;       //!< List of event ports
     std::vector< double > event_dopa_;       //!< List of event ports
