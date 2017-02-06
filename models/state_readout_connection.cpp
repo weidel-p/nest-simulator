@@ -40,15 +40,12 @@ namespace nest
 StateReadoutCommonProperties::StateReadoutCommonProperties()
   : CommonSynapseProperties()
   , vt_( 0 )
-  , Aplus_( 0.1 )
-  , Aminus_( 0.1 )
+  , A_( 0.1 )
   , tau_plus_( 20.0 )
   , tau_n_( 20.0 )
   , b_( 0.0 )
-  , Kplus_threshold_( 5.0 )
   , Kminus_threshold_( 5.0 )
-  , n_lower_threshold_( 1.0 )
-  , n_upper_threshold_( 2.0 )
+  , n_threshold_( 2.0 )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
 {
@@ -64,15 +61,12 @@ StateReadoutCommonProperties::get_status( DictionaryDatum& d ) const
   else
     def< long >( d, "vt", -1 );
 
-  def< double >( d, "Aplus", Aplus_);
-  def< double >( d, "Aminus", Aminus_);
+  def< double >( d, "A", A_);
   def< double >( d, "tau_plus", tau_plus_ );
   def< double >( d, "tau_n", tau_n_ );
   def< double >( d, "b", b_ );
-  def< double >( d, "Kplus_threshold", Kplus_threshold_ );
   def< double >( d, "Kminus_threshold", Kminus_threshold_ );
-  def< double >( d, "n_lower_threshold", n_lower_threshold_ );
-  def< double >( d, "n_upper_threshold", n_upper_threshold_ );
+  def< double >( d, "n_threshold", n_threshold_ );
   def< double >( d, "Wmin", Wmin_ );
   def< double >( d, "Wmax", Wmax_ );
 }
@@ -93,15 +87,12 @@ StateReadoutCommonProperties::set_status( const DictionaryDatum& d,
       throw BadProperty( "Dopamine source must be volume transmitter" );
   }
 
-  updateValue< double >( d, "Aplus", Aplus_);
-  updateValue< double >( d, "Aminus", Aminus_);
+  updateValue< double >( d, "A", A_);
   updateValue< double >( d, "tau_plus", tau_plus_ );
   updateValue< double >( d, "tau_n", tau_n_ );
   updateValue< double >( d, "b", b_ );
-  updateValue< double >( d, "Kplus_threshold", Kplus_threshold_ );
   updateValue< double >( d, "Kminus_threshold", Kminus_threshold_ );
-  updateValue< double >( d, "n_lower_threshold", n_lower_threshold_ );
-  updateValue< double >( d, "n_upper_threshold", n_upper_threshold_ );
+  updateValue< double >( d, "n_threshold", n_threshold_ );
   updateValue< double >( d, "Wmin", Wmin_ );
   updateValue< double >( d, "Wmax", Wmax_ );
 }

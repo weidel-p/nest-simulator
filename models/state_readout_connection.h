@@ -248,15 +248,12 @@ public:
   long get_vt_gid() const;
 
   volume_transmitter* vt_;
-  double Aplus_;
-  double Aminus_;
+  double A_;
   double tau_plus_;
   double tau_n_;
   double b_;
-  double Kplus_threshold_;
   double Kminus_threshold_;
-  double n_upper_threshold_;
-  double n_lower_threshold_;
+  double n_threshold_;
   double Wmin_;
   double Wmax_;
 };
@@ -383,41 +380,11 @@ private:
     const std::vector< spikecounter >& dopa_spikes,
     const StateReadoutCommonProperties& cp);
 
-  void facilitate_(
-    thread t,
-    double t0,
-    double t1,
-    const StateReadoutCommonProperties& cp);
-
-  void depress_(
-    thread t,
-    double t0,
-    double t1,
-    const StateReadoutCommonProperties& cp);
-
   void process_next_(
     thread t,
     double t0,
     double t1,
     const StateReadoutCommonProperties& cp );
-
-  double calc_update_needed_from(
-    double t0,
-    double t1,
-    const StateReadoutCommonProperties& cp );
-
-  double calc_update_needed_until( thread t,
-    double t0,
-    double t1,
-    const StateReadoutCommonProperties& cp );
-
-  int check_if_update_needed(
-    double Kplus,
-    double Kminus,
-    double n,
-    const StateReadoutCommonProperties& cp );
-
-
 
 
   // data members of each connection
@@ -496,54 +463,6 @@ StateReadoutConnection< targetidentifierT >::set_status( const DictionaryDatum& 
 
 template < typename targetidentifierT >
 inline void
-StateReadoutConnection< targetidentifierT >::facilitate_(
-  thread t,
-  double t0,
-  double t1,
-  const StateReadoutCommonProperties& cp){
-
-  assert(t1 >= t0);
-  double dt = t1 - t0;
-  double tau_minus = get_target( t )->get_tau_minus();
-  
-  weight_ = cp.Wmax_ - (cp.Wmax_ - weight_)
-            * std::exp( -1/cp.Wmax_ * cp.Aplus_ * Kminus_ * Kplus_ / -(1/tau_minus + 1/cp.tau_plus_)
-            * (std::exp(-dt/tau_minus) * std::exp(-dt/cp.tau_plus_) - 1));
-
-  if ( weight_ > cp.Wmax_ ){
-    weight_ = cp.Wmax_;
-  }
-  //std::cout << "POTENTIATE " << weight_ << " n " << n_ << " kp " << Kplus_ << " km " << Kminus_ << " t0 " << t0 << " t1 " << t1 << std::endl;
-
-}
-
-template < typename targetidentifierT >
-inline void
-StateReadoutConnection< targetidentifierT >::depress_(
-  thread t,
-  double t0,
-  double t1,
-  const StateReadoutCommonProperties& cp){
-  
-  assert(t1 >= t0);
-  double dt = t1 - t0;
-  double tau_minus = get_target( t )->get_tau_minus();
-
-  weight_ = cp.Wmin_ + (weight_ - cp.Wmin_)
-            * std::exp( -1/cp.Wmin_ * cp.Aminus_ * Kminus_ * Kplus_ / -(1/tau_minus + 1/cp.tau_plus_)
-            * (std::exp(-dt/tau_minus) * std::exp(-dt/cp.tau_plus_) - 1));
-  
-  if ( weight_ < cp.Wmin_ )
-  {
-    weight_ = cp.Wmin_;
-  }
-  //std::cout << "DEPRESS " << weight_ << " n " << n_ << " kp " << Kplus_ << " km " << Kminus_ << " t0 " << t0 << " t1 " << t1 << std::endl;
-}
-
-
-
-template < typename targetidentifierT >
-inline void
 StateReadoutConnection< targetidentifierT >::process_next_(
   thread t,
   double t0,
@@ -558,146 +477,23 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   // update all traces to  t0
   Kminus_ = target->get_K_value( t0 );
 
-  int update_needed_t0 = check_if_update_needed( Kplus_, Kminus_, n_, cp ); 
+  // update weight with forward euler
+  weight_ += cp.A_ * Kplus_ * 
+             (Kminus_ - cp.Kminus_threshold_) * (n_ - cp.n_threshold_) * (t1 - t0); 
 
-  // propagate Kplus_, Kminus_, n_ to t1 in temporary variables 
-  double Kminus_t1 = Kminus_ * std::exp( ( t0 - t1 ) / target->get_tau_minus() );
-  double Kplus_t1 = Kplus_ * std::exp( ( t0 - t1 ) / cp.tau_plus_ );
-  double n_t1 = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
-
-  int update_needed_t1 = check_if_update_needed( Kplus_t1, Kminus_t1, n_t1, cp ); 
-
-  // if potentitaion at t0
-  if (update_needed_t0 == 1 and update_needed_t1 != -1)
-  {
-      //std::cout << "FACI NEEDED until t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
-      //std::cout << "FACI NEEDED until t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
-       double t_until = calc_update_needed_until(t, t0, t1, cp);
-       assert(t_until >= t0);
-       facilitate_(t, t0, t_until, cp );
+  if ( weight_ > cp.Wmax_ ){
+    weight_ = cp.Wmax_;
   }
-
-  // if potentitaion at t1
-  else if (update_needed_t0 == 0 and update_needed_t1 == 1)
-  {
-      //TODO this case should never happen! 
-      std::cout << "FACI NEEDED from t0: " << t0 << " " << t1 << " " << n_ << " " << Kplus_ << " " << Kminus_ << std::endl;
-      std::cout << "FACI NEEDED from t1:" << n_t1 << " " << Kplus_t1 << " " << Kminus_t1 << std::endl;
-       double t_from = calc_update_needed_from(t0, t1, cp);
-       assert(t1 >= t_from);
-       facilitate_(t, t_from, t1, cp);
+  if ( weight_ < cp.Wmin_){
+    weight_ = cp.Wmin_;
   }
-
-  // if depression at t0
-  else if (update_needed_t0 == -1)
-  {
-      //std::cout << "DEPRE NEEDED" << std::endl;
-       double t_until = calc_update_needed_until(t, t0, t1, cp);
-       assert(t_until >= t0);
-       depress_(t, t0, t_until, cp);
-  }
-
-  // if depression at t1
-  else if (update_needed_t0 == 0 and update_needed_t1 == -1)
-  {
-      //std::cout << "DEPRE NEEDED from" << std::endl;
-       double t_from = calc_update_needed_from(t0, t1, cp);
-       assert(t1 >= t_from);
-       depress_(t, t_from, t1, cp);
-  }
-
-  // if potentiation at t0 and depression at t1
-  else if (update_needed_t0 == 1 and update_needed_t1 == -1)
-  {
-      std::cout << "FACI AND DEPRE NEEDED" << std::endl;
-       double t_until = calc_update_needed_until(t, t0, t1, cp);
-       assert(t_until >= t0);
-       facilitate_(t, t0, t_until, cp);
-       double t_from = calc_update_needed_from(t0, t1, cp);
-       assert(t1 >= t_from);
-       depress_(t, t_from, t1, cp);
-  }
-
-  // update Kplus_, Kminus_, n_ according to temporary values
-  Kplus_ = Kplus_t1;
-  Kminus_ = Kminus_t1;
-  n_ = n_t1;
+  // propagate Kplus_, Kminus_, n_ to t1 
+  Kplus_ = Kplus_ * std::exp( ( t0 - t1 ) / cp.tau_plus_ );
+  n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
 
 
-}
 
 
-template < typename targetidentifierT >
-inline int 
-StateReadoutConnection< targetidentifierT >::check_if_update_needed(
-  double Kplus,
-  double Kminus,
-  double n,
-  const StateReadoutCommonProperties& cp )
-{
-
-  if (Kminus > cp.Kminus_threshold_ and Kplus > cp.Kplus_threshold_)
-  {
-    if (n > cp.n_upper_threshold_)
-    {
-      //std::cout << "update needed facili " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
-      return 1; 
-    }
-    else if (n < cp.n_lower_threshold_)
-    {
-      //std::cout << "update needed depp " <<  " n " << n << " kp " << Kplus << " km " << Kminus  << std::endl;
-      return -1; 
-    }
-  }
-  return 0;
-}
-
-template < typename targetidentifierT >
-inline double 
-StateReadoutConnection< targetidentifierT >::calc_update_needed_from(
-  double t0,
-  double t1,
-  const StateReadoutCommonProperties& cp )
-{
-  assert(t1 >= t0);
-  double t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_lower_threshold_ / n_);
- // std::cout << t0 << " from " << std::min(t_threshold_cross_n, t1)<< std::endl;
-  return t0 + std::min(t_threshold_cross_n, t1);
-}
-
-
-template < typename targetidentifierT >
-inline double 
-StateReadoutConnection< targetidentifierT >::calc_update_needed_until( thread t,
-  double t0,
-  double t1,
-  const StateReadoutCommonProperties& cp )
-{
-  assert(t1 >= t0);
-
-  Node* target = get_target( t );
-  
-  double t_threshold_cross_K_minus = -target->get_tau_minus() * std::log(cp.Kminus_threshold_ / Kminus_);
-  if (t_threshold_cross_K_minus < 0){
-	std::cout <<  " km " <<  Kminus_ << " " << cp.Kminus_threshold_ << std::endl;
-  }
-  double t_threshold_cross_K_plus = -cp.tau_plus_ * std::log(cp.Kplus_threshold_ / Kplus_);
-  if (t_threshold_cross_K_plus < 0){
-	std::cout << " kp " <<  Kplus_ << " " << cp.Kplus_threshold_ << std::endl;
-  }
-
-
-  double t_threshold_cross_n = t1; 
-  if (n_ > cp.n_upper_threshold_)
-      t_threshold_cross_n = -cp.tau_n_ * std::log(cp.n_upper_threshold_ / n_);
-  
-  if (t_threshold_cross_n < 0){
-	std::cout << " n " <<  n_ << " " << cp.n_upper_threshold_ << std::endl;
-  }
-
-  //std::cout << t0 << " until " << std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)))<< std::endl;
-  return t0 + std::min(t_threshold_cross_K_minus, std::min(t_threshold_cross_K_plus, std::min(t_threshold_cross_n, t1)));
-  
 }
 
 
@@ -778,7 +574,7 @@ StateReadoutConnection< targetidentifierT >::send( Event& e,
   }
 
 
-  Kminus_ = target->get_K_value( t_spike);
+  Kminus_ = target->get_K_value( t_spike );
 
   e.set_receiver( *target );
   e.set_weight( weight_ );
