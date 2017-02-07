@@ -481,8 +481,15 @@ StateReadoutConnection< targetidentifierT >::process_next_(
 
 
   // update weight with forward euler
-  weight_ += cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
+  double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
                      (n_ - cp.n_threshold_) * (t1 - t0); 
+
+  if (dw > 0){
+      weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  }
+  else{
+      weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  }
 
   if ( weight_ > cp.Wmax_ ){
     weight_ = cp.Wmax_;
