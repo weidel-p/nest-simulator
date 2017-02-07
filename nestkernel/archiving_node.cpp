@@ -278,6 +278,8 @@ nest::Archiving_Node::get_status( DictionaryDatum& d ) const
   def< double >( d, names::tau_minus, tau_minus_ );
   def< double >( d, "tau_rate_short", tau_rate_short_ );
   def< double >( d, "tau_rate_long", tau_rate_long_ );
+  def< double >( d, "firing_rate_short", firing_rate_short_ );
+  def< double >( d, "firing_rate_long", firing_rate_long_ );
   def< double >( d, names::Ca, Ca_minus_ );
   def< double >( d, names::tau_Ca, tau_Ca_ );
   def< double >( d, names::beta_Ca, beta_Ca_ );
@@ -308,6 +310,8 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   double new_tau_minus_triplet = tau_minus_triplet_;
   double new_tau_rate_short = tau_rate_short_;
   double new_tau_rate_long = tau_rate_long_;
+  double new_firing_rate_short = firing_rate_short_;
+  double new_firing_rate_long = firing_rate_long_;
   double new_tau_Ca = tau_Ca_;
   double new_beta_Ca = beta_Ca_;
   updateValue< double >( d, names::tau_minus, new_tau_minus );
@@ -315,7 +319,9 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   updateValue< double >( d, names::tau_Ca, new_tau_Ca );
   updateValue< double >( d, names::beta_Ca, new_beta_Ca );
   updateValue< double >( d, "tau_rate_short", new_tau_rate_short );
-  updateValue< double >( d, "tau_rate_long", new_tau_rate_long);
+  updateValue< double >( d, "tau_rate_long", new_tau_rate_long );
+  updateValue< double >( d, "firing_rate_short", new_firing_rate_short);
+  updateValue< double >( d, "firing_rate_long", new_firing_rate_long);
 
   if ( new_tau_minus <= 0.0 || new_tau_minus_triplet <= 0.0 )
   {
@@ -326,6 +332,8 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   tau_minus_triplet_ = new_tau_minus_triplet;
   tau_rate_short_ = new_tau_rate_short;
   tau_rate_long_ = new_tau_rate_long;
+  firing_rate_short_ = new_firing_rate_short;
+  firing_rate_long_ = new_firing_rate_long;
 
   if ( new_tau_Ca <= 0.0 )
   {

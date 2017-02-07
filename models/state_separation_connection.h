@@ -391,8 +391,6 @@ private:
  double weight_;
  double Kplus_short_;
  double Kplus_long_;
- double Kminus_short_;
- double Kminus_long_;
  double n_;
 
 
@@ -412,8 +410,6 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
  , weight_( 1.0 )
  , Kplus_short_( 0.0 )
  , Kplus_long_( 0.0 )
- , Kminus_short_( 0.0 )
- , Kminus_long_( 0.0 )
  , n_( 0.0 )
  , dopa_spikes_idx_( 0 )
  , t_last_update_( 0.0 )
@@ -427,8 +423,6 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
  , weight_( rhs.weight_ )
  , Kplus_short_( rhs.Kplus_short_ )
  , Kplus_long_( rhs.Kplus_long_ )
- , Kminus_short_( rhs.Kminus_short_)
- , Kminus_long_( rhs.Kminus_long_)
  , n_( rhs.n_ )
  , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
  , t_last_update_( rhs.t_last_update_ )
@@ -448,8 +442,6 @@ StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d )
  def< double >( d, "n", n_ );
  def< double >( d, "Kplus_short", Kplus_short_ );
  def< double >( d, "Kplus_long", Kplus_long_ );
- def< double >( d, "Kminus_short", Kminus_short_);
- def< double >( d, "Kminus_long", Kminus_long_);
 }
 
 template < typename targetidentifierT >
@@ -464,8 +456,6 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
  updateValue< double >( d, "n", n_ );
  updateValue< double >( d, "Kplus_short", Kplus_short_ );
  updateValue< double >( d, "Kplus_long", Kplus_long_ );
- updateValue< double >( d, "Kminus_short", Kminus_short_);
- updateValue< double >( d, "Kminus_long", Kminus_long_);
 }
 
 
@@ -485,13 +475,13 @@ StateSeparationConnection< targetidentifierT >::process_next_(
  Node* target = get_target( t );
 
  // update all traces to  t0
- Kminus_short_ = target->get_firing_rate_short( t0 );
- Kminus_long_ = target->get_firing_rate_long( t0 );
+ double Kminus_short = target->get_firing_rate_short( t0 );
+ double Kminus_long = target->get_firing_rate_long( t0 );
 
 
 
  // update weight with forward euler
- weight_ += cp.A_ * (Kplus_short_ * Kminus_short_ - Kplus_long_ * Kminus_long_) * 
+ weight_ += cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
                     std::abs(n_ - cp.n_threshold_) * (t1 - t0); 
 
  if ( weight_ > cp.Wmax_ ){
@@ -589,8 +579,8 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
 
 
- Kminus_short_ = target->get_firing_rate_short( t_spike );
- Kminus_long_ = target->get_firing_rate_long( t_spike );
+ double Kminus_short = target->get_firing_rate_short( t_spike );
+ double Kminus_long = target->get_firing_rate_long( t_spike );
 
  e.set_receiver( *target );
  e.set_weight( weight_ );
@@ -598,8 +588,8 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
  e.set_rport( get_rport() );
  e.set_Kplus_short( Kplus_short_ );
  e.set_Kplus_long( Kplus_long_ );
- e.set_Kminus_short( Kminus_short_ );
- e.set_Kminus_long( Kminus_long_ );
+ e.set_Kminus_short( Kminus_short );
+ e.set_Kminus_long( Kminus_long );
  e.set_dopa( n_ );
  e();
 
