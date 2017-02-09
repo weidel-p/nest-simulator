@@ -216,6 +216,7 @@
 #include "spikecounter.h"
 
 #include <iostream> 
+#include <cmath>
 
 namespace nest
 {
@@ -479,10 +480,11 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   double Kminus_long = target->get_firing_rate_long( t0 );
 
 
+  double n_diff = n_ - cp.n_threshold_;
 
   // update weight with forward euler
   double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
-                     (n_ - cp.n_threshold_) * (t1 - t0); 
+                     copysign(std::pow(n_diff, 2), n_diff) * (t1 - t0); 
 
   if (dw > 0){
       weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
