@@ -483,11 +483,7 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   double n_diff = n_ - cp.n_threshold_;
 
   // update weight with forward euler
-<<<<<<< HEAD
-  double dw = cp.A_ * Kplus_short_ * (Kminus_short - Kminus_long) * 
-=======
   double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
->>>>>>> 0b564d40a6fec005090c6d167c3c57b6b6ceb736
                      copysign(std::pow(n_diff, 2), n_diff) * (t1 - t0); 
 
   if (dw > 0){
