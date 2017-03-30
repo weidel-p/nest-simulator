@@ -29,6 +29,7 @@
 #include "event.h"
 #include "nest_types.h"
 #include "ring_buffer.h"
+#include "../precise/slice_ring_buffer.h"
 #include "universal_data_logger.h"
 
 namespace nest
@@ -118,6 +119,13 @@ public:
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
 
+  const std::vector< double >& get_post_spikes() const;
+  bool requires_time_driven_clearing()
+  {
+    return true;
+  }
+  void clear_post_spikes();
+
 private:
   friend class RecordablesMap< izhikevich >;
   friend class UniversalDataLogger< izhikevich >;
@@ -194,9 +202,12 @@ private:
     Buffers_( const Buffers_&, izhikevich& );
     UniversalDataLogger< izhikevich > logger_;
 
-    /** buffers and sums up incoming spikes/currents */
+    /** buffers (and sums up) incoming spikes/currents */
     RingBuffer spikes_;
+    SliceRingBuffer stdp_izh_spikes_;
     RingBuffer currents_;
+
+    std::vector< double > post_spikes_; // to keep track of spike times
   };
 
   // ----------------------------------------------------------------
@@ -294,6 +305,21 @@ izhikevich::set_status( const DictionaryDatum& d )
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
   S_ = stmp;
+}
+
+inline const std::vector< double >&
+izhikevich::get_post_spikes() const
+{
+  return B_.post_spikes_;
+}
+
+inline void
+izhikevich::clear_post_spikes()
+{
+  // erase all spikes except the last spike
+  double last_post_spike = B_.post_spikes_[ B_.post_spikes_.size()-1 ];
+  B_.post_spikes_.clear();
+  B_.post_spikes_.push_back( last_post_spike );
 }
 
 } // namespace nest

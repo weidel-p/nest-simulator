@@ -57,6 +57,7 @@ nest::SimulationManager::SimulationManager()
   , wfr_tol_( 0.0001 )
   , wfr_max_iterations_( 15 )
   , wfr_interpolation_order_( 3 )
+  , syn_update_interval_( 1000 )
 {
 }
 
@@ -335,6 +336,17 @@ nest::SimulationManager::set_status( const DictionaryDatum& d )
     else
       wfr_interpolation_order_ = interp_order;
   }
+
+  long syn_update_interval;
+  if ( updateValue< long >( d, "syn_update_interval", syn_update_interval ) )
+  {
+    if ( syn_update_interval < 1 )
+      LOG( M_ERROR,
+        "SimulationManager::set_status",
+        "Interval for time-driven synaptic update must be at least 1." );
+    else
+      syn_update_interval_ = syn_update_interval;
+  }
 }
 
 void
@@ -357,6 +369,8 @@ nest::SimulationManager::get_status( DictionaryDatum& d )
   def< double >( d, "wfr_tol", wfr_tol_ );
   def< long >( d, "wfr_max_iterations", wfr_max_iterations_ );
   def< long >( d, "wfr_interpolation_order", wfr_interpolation_order_ );
+
+  def< long >( d, "syn_update_interval_", syn_update_interval_ );
 }
 
 void
@@ -753,6 +767,21 @@ nest::SimulationManager::update_()
           exceptions_raised.at( thrd ) = lockPTR< WrappedThreadException >(
             new WrappedThreadException( e ) );
         }
+      }
+
+      if ( ( slice_ + 1 ) % syn_update_interval_ == 0 )
+      {
+	double t_trig = Time(Time::step( clock_.get_steps() + to_step_ ) ).get_ms();
+
+	// trigger update of all synapses that are registered with a volume transmitter
+	kernel().connection_manager.trigger_time_driven_update( thrd, t_trig );
+
+	// clear spike history of all volume transmitters
+	for ( std::vector< Node* >::const_iterator node = thread_local_nodes.begin(); node != thread_local_nodes.end(); ++node )
+	{
+	  if ( ( *node )->requires_time_driven_clearing() )
+	    ( *node )->clear_post_spikes();
+	}
       }
 
 // parallel section ends, wait until all threads are done -> synchronize

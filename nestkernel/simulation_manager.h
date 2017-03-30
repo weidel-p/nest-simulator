@@ -128,6 +128,8 @@ public:
   // TODO: rename / precisely how defined?
   delay get_to_step() const;
 
+  delay get_syn_update_interval() const;
+
 private:
   void resume_( size_t );       //!< actually run simulation; TODO: review
   size_t prepare_simulation_(); //! setup before simulation start
@@ -163,6 +165,7 @@ private:
                             //!< relaxation
   size_t wfr_interpolation_order_; //!< interpolation order for waveform
                                    //!< relaxation method
+  delay syn_update_interval_; //!< interval for time-driven synaptic updates
 };
 
 inline Time const&
@@ -231,6 +234,13 @@ SimulationManager::get_wfr_interpolation_order() const
 {
   return wfr_interpolation_order_;
 }
+
+inline delay
+SimulationManager::get_syn_update_interval() const
+{
+  return syn_update_interval_;
+}
+
 }
 
 

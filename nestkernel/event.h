@@ -260,6 +260,8 @@ public:
    */
   void set_stamp( Time const& );
 
+  virtual void set_multiplicity( const int multiplicity );
+
 protected:
   index sender_gid_; //!< GID of sender or -1.
                      /*
@@ -337,7 +339,7 @@ public:
   void operator()();
   SpikeEvent* clone() const;
 
-  void set_multiplicity( int );
+  void set_multiplicity( const int );
   int get_multiplicity() const;
 
 
@@ -357,7 +359,7 @@ SpikeEvent::clone() const
 }
 
 inline void
-SpikeEvent::set_multiplicity( int multiplicity )
+SpikeEvent::set_multiplicity( const int multiplicity )
 {
   multiplicity_ = multiplicity;
 }
@@ -1182,6 +1184,13 @@ Event::set_rport( rport rp )
 {
   rp_ = rp;
 }
+
+inline void
+Event::set_multiplicity( const int )
+{
+  throw UnexpectedEvent();
+}
+
 }
 
 #endif // EVENT_H

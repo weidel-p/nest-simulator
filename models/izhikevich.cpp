@@ -28,11 +28,15 @@
 // Includes from libnestutil:
 #include "numerics.h"
 
+// Includes from models:
+#include "stdp_izh_connection.h"
+
 // Includes from nestkernel:
 #include "event_delivery_manager_impl.h"
 #include "exceptions.h"
 #include "kernel_manager.h"
 #include "universal_data_logger_impl.h"
+#include "target_identifier.h"
 
 // Includes from sli:
 #include "dict.h"
@@ -138,11 +142,15 @@ nest::izhikevich::State_::set( const DictionaryDatum& d, const Parameters_& )
 nest::izhikevich::Buffers_::Buffers_( izhikevich& n )
   : logger_( n )
 {
+  post_spikes_.clear();
+  post_spikes_.push_back( -std::numeric_limits<double>::max() );
 }
 
 nest::izhikevich::Buffers_::Buffers_( const Buffers_&, izhikevich& n )
   : logger_( n )
 {
+  post_spikes_.clear();
+  post_spikes_.push_back( -std::numeric_limits<double>::max() );
 }
 
 /* ----------------------------------------------------------------
@@ -180,9 +188,11 @@ nest::izhikevich::init_state_( const Node& proto )
 void
 nest::izhikevich::init_buffers_()
 {
-  B_.spikes_.clear();   // includes resize
-  B_.currents_.clear(); // includes resize
-  B_.logger_.reset();   // includes resize
+  B_.spikes_.clear();          // includes resize
+  B_.stdp_izh_spikes_.resize();
+  B_.stdp_izh_spikes_.clear();
+  B_.currents_.clear();        // includes resize
+  B_.logger_.reset();          // includes resize
   Archiving_Node::clear_history();
 }
 
@@ -202,12 +212,30 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
   assert(
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
+  
+  // at start of slice, tell input queue to prepare for delivery
+  if ( from == 0 )
+    B_.stdp_izh_spikes_.prepare_delivery();
 
   const double h = Time::get_resolution().get_ms();
   double v_old, u_old;
 
   for ( long lag = from; lag < to; ++lag )
   {
+    // summed contribution of non-STDPIzhConnection spikes
+    double I_syn = B_.spikes_.get_value( lag );
+
+    // contributions of STDPIzhConnection spikes
+    const long T = origin.get_steps() + lag; // time at start of update step
+    double ev_offset;                        // not used here
+    double ev_weight;                        // pointer to synapse that requires casting
+    bool end_of_refract;                     // not used here
+    while ( B_.stdp_izh_spikes_.get_next_spike( T, ev_offset, ev_weight, end_of_refract ) )
+    {
+      const STDPIzhConnection* syn = reinterpret_cast< STDPIzhConnection* >( static_cast< long >( ev_weight ) );
+      I_syn += syn->get_weight();
+    }
+
     // neuron is never refractory
     // use standard forward Euler numerics in this case
     if ( P_.consistent_integration_ )
@@ -215,15 +243,13 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       v_old = S_.v_;
       u_old = S_.u_;
       S_.v_ += h * ( 0.04 * v_old * v_old + 5.0 * v_old + 140.0 - u_old + S_.I_
-                     + P_.I_e_ )
-        + B_.spikes_.get_value( lag );
+                     + P_.I_e_ ) + I_syn;
       S_.u_ += h * P_.a_ * ( P_.b_ * v_old - u_old );
     }
     // use numerics published in Izhikevich (2003) in this case (not
     // recommended)
     else
     {
-      double I_syn = B_.spikes_.get_value( lag );
       S_.v_ += h * 0.5 * ( 0.04 * S_.v_ * S_.v_ + 5.0 * S_.v_ + 140.0 - S_.u_
                            + S_.I_ + P_.I_e_ + I_syn );
       S_.v_ += h * 0.5 * ( 0.04 * S_.v_ * S_.v_ + 5.0 * S_.v_ + 140.0 - S_.u_
@@ -243,6 +269,10 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       // compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
+      // keeps track of spike history for STDPIzhConnections
+      // cleared every syn_update_interval
+      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag + 1 )).get_ms() );
+
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
     }
@@ -259,9 +289,27 @@ void
 nest::izhikevich::handle( SpikeEvent& e )
 {
   assert( e.get_delay() > 0 );
-  B_.spikes_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    e.get_weight() * e.get_multiplicity() );
+  
+  int multiplicity = e.get_multiplicity();
+
+  if ( multiplicity == -1 )
+  {
+    // multiplicity of -1 indicates a SpikeEvent from an STDPIzhConnection
+    B_.stdp_izh_spikes_.add_spike(
+      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      e.get_stamp().get_steps() + e.get_delay() - 1,
+      e.get_offset(),
+      e.get_weight() );
+    // As the event object maybe recycled, reset multiplicity to its default of 1.
+    e.set_multiplicity(1);
+  }
+  else
+  {
+    // regular SpikeEvent
+    B_.spikes_.add_value(
+      e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void

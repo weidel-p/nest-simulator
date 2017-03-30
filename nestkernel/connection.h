@@ -223,6 +223,19 @@ public:
     const double,
     const CommonSynapseProperties& );
 
+  /**
+   * Should return true only if time_driven_update() is implemented.
+   */
+  bool requires_time_driven_update() const
+  {
+    return false;
+  }
+
+  /**
+   * Time-driven update of synaptic state.
+   */
+  void time_driven_update( const thread tid, const double t_trig, const CommonSynapseProperties& cm );
+
   Node*
   get_target( thread t ) const
   {
@@ -339,6 +352,15 @@ Connection< targetidentifierT >::trigger_update_weight( const thread,
     "Connection::trigger_update_weight: "
     "Connection does not support updates that are triggered by the volume "
     "transmitter." );
+}
+
+template < typename targetidentifierT >
+inline void
+Connection< targetidentifierT >::time_driven_update( const thread, const double, const CommonSynapseProperties& )
+{
+  throw IllegalConnection(
+    "Connection::time_driven_update: "
+    "Connection does not support time-driven updates." );
 }
 
 } // namespace nest

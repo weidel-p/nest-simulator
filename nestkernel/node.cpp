@@ -401,4 +401,16 @@ Node::is_subnet() const
   return false;
 }
 
+void
+Node::clear_post_spikes()
+{
+  throw UnexpectedEvent();
+}
+
+const std::vector< double >&
+Node::get_post_spikes() const
+{
+  throw UnexpectedEvent();
+}
+
 } // namespace

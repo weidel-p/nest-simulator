@@ -944,6 +944,13 @@ nest::ConnectionManager::trigger_update_weight( const long vt_id,
 }
 
 void
+nest::ConnectionManager::trigger_time_driven_update( const thread tid, const double t_trig )
+{
+  for ( tSConnector::const_nonempty_iterator it = connections_[ tid ].nonempty_begin(); it != connections_[ tid ].nonempty_end(); ++it )
+    validate_pointer( *it )->trigger_time_driven_update( tid, t_trig, kernel().model_manager.get_synapse_prototypes( tid ) );
+}
+
+void
 nest::ConnectionManager::send( thread t, index sgid, Event& e )
 {
   if ( sgid

@@ -794,6 +794,15 @@ public:
     return 0;
   }
 
+  virtual bool requires_time_driven_clearing()
+  {
+    return false;
+  }
+
+  virtual const std::vector< double >& get_post_spikes() const;
+
+  virtual void clear_post_spikes();
+
 private:
   void set_lid_( index );      //!< Set local id, relative to the parent subnet
   void set_parent_( Subnet* ); //!< Set pointer to parent subnet.

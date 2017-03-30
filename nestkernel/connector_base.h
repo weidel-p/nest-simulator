@@ -178,6 +178,8 @@ public:
     double t_trig,
     const std::vector< ConnectorModel* >& cm ) = 0;
 
+  virtual void trigger_time_driven_update( const thread tid, const double t_trig, const std::vector< ConnectorModel* >& cm ) = 0;
+
   virtual void send_secondary( SecondaryEvent& e,
     thread t,
     const std::vector< ConnectorModel* >& cm ) = 0;
@@ -502,6 +504,23 @@ public:
             ->get_common_properties() );
   }
 
+  void
+  trigger_time_driven_update( const thread tid, const double t_trig, const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+
+    // if the first connection requires the time-driven update,
+    // the following connections also require the update
+    // as all connections in C_ are of the same type
+    if ( C_[ 0 ].requires_time_driven_update() )
+    {
+      for ( size_t i = 0; i < K; i++ )
+      {
+	C_[ i ].time_driven_update( tid, t_trig, static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )->get_common_properties() );
+      }
+    }
+  }
+
   synindex
   get_syn_id() const
   {
@@ -728,6 +747,17 @@ public:
         t_trig,
         static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
           ->get_common_properties() );
+  }
+
+  void
+  trigger_time_driven_update( const thread tid, const double t_trig, const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+    
+    if ( C_[ 0 ].requires_time_driven_update() )
+    {
+      C_[ 0 ].time_driven_update( tid, t_trig, static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )->get_common_properties() );
+    }
   }
 
   synindex
@@ -976,6 +1006,23 @@ public:
             ->get_common_properties() );
   }
 
+  void
+  trigger_time_driven_update( const thread tid, const double t_trig, const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+    
+    // if the first connection requires the time-driven update,
+    // the following connections also require the update
+    // as all connections in C_ are of the same type
+    if ( C_[ 0 ].requires_time_driven_update() )
+    {
+      for ( size_t i = 0; i < C_.size(); i++ )
+      {
+	C_[ i ].time_driven_update( tid, t_trig, static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )->get_common_properties() );
+      }
+    }
+  }
+
   synindex
   get_syn_id() const
   {
@@ -1126,6 +1173,15 @@ public:
   {
     for ( size_t i = 0; i < size(); i++ )
       at( i )->trigger_update_weight( vt_gid, t, dopa_spikes, t_trig, cm );
+  }
+
+  void
+  trigger_time_driven_update( const thread tid, const double t_trig, const std::vector< ConnectorModel* >& cm )
+  {
+    for ( size_t i = 0; i < size(); i++ )
+    {
+      at( i )->trigger_time_driven_update( tid, t_trig, cm );
+    }
   }
 
   void

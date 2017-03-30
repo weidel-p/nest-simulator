@@ -256,6 +256,8 @@ public:
     const std::vector< spikecounter >& dopa_spikes,
     const double t_trig );
 
+  void trigger_time_driven_update( const thread tid, const double t_trig );
+
   /**
    * Return minimal connection delay, which is precomputed by
    * update_delay_extrema_().
