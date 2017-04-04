@@ -179,7 +179,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   {
     weight_ = 0.0;
   }
-  std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
+  //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
