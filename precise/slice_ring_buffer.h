@@ -204,16 +204,18 @@ SliceRingBuffer::get_next_spike( const long req_stamp,
     // we have an event to deliver, register its offset
     ps_offset = deliver_->back().ps_offset_;
 
-    // accumulate weights of all spikes with same stamp
-    // AND offset
-    weight = 0.0; // accumulate weights of all
-    while ( !deliver_->empty() && deliver_->back().ps_offset_ == ps_offset
-      && deliver_->back().stamp_ == req_stamp )
-    {
-      weight += deliver_->back().weight_;
-      deliver_->pop_back();
-    }
-
+    /* // accumulate weights of all spikes with same stamp */
+    /* // AND offset */
+    /* weight = 0.0; // accumulate weights of all */
+    /* while ( !deliver_->empty() && deliver_->back().ps_offset_ == ps_offset */
+    /*   && deliver_->back().stamp_ == req_stamp ) */
+    /* { */
+    /*   weight += deliver_->back().weight_; */
+    /*   deliver_->pop_back(); */
+    /* } */
+    weight = deliver_->back().weight_;
+    deliver_->pop_back();
+    
     return true;
   }
   else
