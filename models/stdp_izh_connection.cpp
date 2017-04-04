@@ -78,7 +78,7 @@ STDPIzhConnection::get_status( DictionaryDatum& d ) const
   def< double >( d, "lambda", lambda_);
   def< double >( d, "alpha", alpha_);
   def< double >( d, "Wmax", Wmax_);
-  def< double >( d, "consistent_integration", consistent_integration_);
+  def< bool >( d, "consistent_integration", consistent_integration_);
 }
 
 void
@@ -92,7 +92,7 @@ STDPIzhConnection::set_status( const DictionaryDatum& d, ConnectorModel& cm )
   updateValue< double >( d, "lambda", lambda_);
   updateValue< double >( d, "alpha", alpha_);
   updateValue< double >( d, "Wmax", Wmax_);
-  updateValue< double >( d, "consistent_integration", consistent_integration_);
+  updateValue< bool >( d, "consistent_integration", consistent_integration_);
 }
 
 void
