@@ -41,6 +41,7 @@ STDPIzhConnection::STDPIzhConnection()
   , alpha_(1.2)
   , Wmax_(10.0)
   , t_last_update_(0.0)
+  , t_last_post_spike_(0.0)
   , consistent_integration_(true)
 {
   pre_spikes_.clear();
@@ -59,10 +60,11 @@ STDPIzhConnection::STDPIzhConnection( const STDPIzhConnection& rhs )
   , alpha_( rhs.alpha_ )
   , Wmax_( rhs.Wmax_ )
   , t_last_update_( rhs.t_last_update_ )
+  , t_last_post_spike_( rhs.t_last_post_spike_ )
   , consistent_integration_( rhs.consistent_integration_ )
 {
   pre_spikes_.clear();
-  pre_spikes_.push_back(-std::numeric_limits<double>::max());
+  pre_spikes_.push_back(-10000);
 }
 
 void
@@ -101,7 +103,10 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   //std::cout << "before update weight = " << weight_ << std::endl;
 
   Node* target = get_target( tid );
-  const std::vector< double >& post_spikes = target->get_post_spikes();
+  const std::vector< double >& post_spikes_tmp = target->get_post_spikes();
+
+  std::vector< double > post_spikes ( post_spikes_tmp.size() );
+  std::copy(post_spikes_tmp.begin(), post_spikes_tmp.end(), post_spikes.begin());
 
   /* std::cout << "pre_spikes = [ "; */
   /* for ( std::vector< double >::const_iterator it = pre_spikes_.begin(); it < pre_spikes_.end(); ++it ) */
@@ -122,45 +127,73 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 
   // pre_spikes[0] and post_spikes[0] are the times of the last
   // presynaptic and postsynaptic spike in the last update interval, respectively
+  //for ( int k = 0; k < post_spikes.size(); ++k )
+  //{
+  //    std::cout << post_spikes[k] << " ";
+  //}
+  //std::cout << std::endl;
 
-  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] <= t_trig; ++j )
+  if (post_spikes[0] == t_last_update_){
+
+      post_spikes.insert(post_spikes.begin(), t_last_post_spike_);
+  }
+
+  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] < t_trig; ++j )
   {
+
     while ( i < post_spikes.size() && post_spikes[i] <= pre_spikes_[j] )
     {
+      int dt = post_spikes[i] - pre_spikes_[j-1];
+      if (post_spikes[i] == pre_spikes_[j])
+        dt = 0.;
       // facilitation (also for t_pre_spike == t_post_spike)
-      wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] ) / tau_plus_ );
+      wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt);
       //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
-      K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
+      //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
+      K_minus_ = 1.0;
+     // if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
+     //     std::cout << "increment for post spike at " << post_spikes[i] << " sd " << wdev_ << " LTP " << lambda_ * K_plus_* std::pow(0.95,  dt) << " LTD " << alpha_ * lambda_ * K_minus_ << std::endl; 
       ++i;
     }
     
     // depression (also for t_pre_spike == t_post_spike)
-    wdev_ -= alpha_ * lambda_ * K_minus_ * std::exp( ( post_spikes[i-1] - pre_spikes_[j] )  / tau_minus_);
+    int dt = pre_spikes_[j] - post_spikes[i-1];
+    wdev_ -= alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt);
     //std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_ << std::endl;
-    K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
+    //K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
+    K_plus_ = 1.0;
+    //if (pre_spikes_[j] > 76000 and pre_spikes_[j] < 78000 or true)
+    //    std::cout << "decrement for pre spike at " << pre_spikes_[j] << " sd " << wdev_ << " LTP " << lambda_ * K_plus_ << " LTD " << alpha_ * lambda_ * K_minus_ *  std::pow(0.95, dt) << std::endl; 
+
   }
   
   //std::cout << "no more pre_spikes in update interval" << std::endl;
   
   // process remaining postsynaptic spikes in this update interval if there are any
-  while ( i < post_spikes.size() && post_spikes[i] <= t_trig )
+  while ( i < post_spikes.size() && post_spikes[i] < t_trig )
   {
     // facilitation
-    wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] ) / tau_plus_ );
+    int dt = post_spikes[i] - pre_spikes_[j-1];
+    wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt);
     //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
-    K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
+    //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
+    K_minus_ = 1.0;
+    //if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
+    //    std::cout << "increment for post spike at " << post_spikes[i] << " sd " << wdev_ << " LTP " << lambda_ * K_plus_* std::pow(0.95, dt) << " LTD " << alpha_ * lambda_ * K_minus_ << std::endl; 
     ++i;
   }
   
-  double w_new = weight_ + wdev_;
+   
+  double w_new = 0;
   if ( consistent_integration_ )
   {
+    w_new = weight_ + wdev_; 
     wdev_ = 0.0;
   }
   else
   {
-    w_new += 0.01;
     wdev_ *= 0.9;
+    w_new = weight_ + wdev_ + 0.01; 
   }
 
   //std::cout << "before boundary check weight = " << w_new << std::endl;
@@ -179,6 +212,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   {
     weight_ = 0.0;
   }
+  //std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl; 
   //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
 
   // erase all processed presynaptic spikes except the last one
@@ -193,6 +227,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   /* std::cout << "]" << std::endl; */
 
   t_last_update_ = t_trig;
+  t_last_post_spike_ = post_spikes[post_spikes.size()-1];
 }
 
 } // of namespace nest

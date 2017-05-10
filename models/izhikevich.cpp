@@ -143,14 +143,14 @@ nest::izhikevich::Buffers_::Buffers_( izhikevich& n )
   : logger_( n )
 {
   post_spikes_.clear();
-  post_spikes_.push_back( -std::numeric_limits<double>::max() );
+  post_spikes_.push_back( -10000 );
 }
 
 nest::izhikevich::Buffers_::Buffers_( const Buffers_&, izhikevich& n )
   : logger_( n )
 {
   post_spikes_.clear();
-  post_spikes_.push_back( -std::numeric_limits<double>::max() );
+  post_spikes_.push_back( -10000 );
 }
 
 /* ----------------------------------------------------------------

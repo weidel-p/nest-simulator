@@ -175,6 +175,7 @@ private:
   double alpha_;
   double Wmax_;
   double t_last_update_;
+  double t_last_post_spike_;
   bool   consistent_integration_;
   std::vector< double > pre_spikes_;
 };
