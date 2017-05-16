@@ -236,6 +236,22 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       I_syn += syn->get_weight();
     }
 
+    // threshold crossing
+    if ( S_.v_ >= P_.V_th_ )
+    {
+      S_.v_ = P_.c_;
+      S_.u_ = S_.u_ + P_.d_;
+
+      // compute spike time
+      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+
+      // keeps track of spike history for STDPIzhConnections
+      // cleared every syn_update_interval
+      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag + 1 )).get_ms() );
+
+      SpikeEvent se;
+      kernel().event_delivery_manager.send( *this, se, lag );
+    }
     // neuron is never refractory
     // use standard forward Euler numerics in this case
     if ( P_.consistent_integration_ )
@@ -250,16 +266,14 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
     // recommended)
     else
     {
-      S_.v_ += h * 0.5 * ( 0.04 * S_.v_ * S_.v_ + 5.0 * S_.v_ + 140.0 - S_.u_
+      //v[i]+=0.5*((0.04*v[i]+5)*v[i]+140-u[i]+I[i]);
+
+      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
                            + S_.I_ + P_.I_e_ + I_syn );
-      S_.v_ += h * 0.5 * ( 0.04 * S_.v_ * S_.v_ + 5.0 * S_.v_ + 140.0 - S_.u_
+      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
                            + S_.I_ + P_.I_e_ + I_syn );
       S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
     }
-
-    // lower bound of membrane potential
-    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
-
     // threshold crossing
     if ( S_.v_ >= P_.V_th_ )
     {
@@ -277,6 +291,10 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       kernel().event_delivery_manager.send( *this, se, lag );
     }
 
+    // lower bound of membrane potential
+    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
+
+    
     // set new input current
     S_.I_ = B_.currents_.get_value( lag );
 
