@@ -235,23 +235,16 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       const STDPIzhConnection* syn = reinterpret_cast< STDPIzhConnection* >( static_cast< long >( ev_weight ) );
       I_syn += syn->get_weight();
     }
-
+    int spike=0;
     // threshold crossing
     if ( S_.v_ >= P_.V_th_ )
     {
       S_.v_ = P_.c_;
       S_.u_ = S_.u_ + P_.d_;
+       spike=1;
+     }
 
-      // compute spike time
-      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
-      // keeps track of spike history for STDPIzhConnections
-      // cleared every syn_update_interval
-      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag + 1 )).get_ms() );
-
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
-    }
     // neuron is never refractory
     // use standard forward Euler numerics in this case
     if ( P_.consistent_integration_ )
@@ -274,18 +267,14 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
                            + S_.I_ + P_.I_e_ + I_syn );
       S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
     }
-    // threshold crossing
-    if ( S_.v_ >= P_.V_th_ )
+    if ( (S_.v_ >= P_.V_th_ )|| (spike==1) )
     {
-      S_.v_ = P_.c_;
-      S_.u_ = S_.u_ + P_.d_;
-
-      // compute spike time
-      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+    // compute spike time
+      set_spiketime( Time::step( origin.get_steps() + lag+1 ) );
 
       // keeps track of spike history for STDPIzhConnections
       // cleared every syn_update_interval
-      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag + 1 )).get_ms() );
+      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag+1)).get_ms() );
 
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
@@ -300,6 +289,12 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
 
     // voltage logging
     B_.logger_.record_data( origin.get_steps() + lag );
+    if ( (S_.v_ >= P_.V_th_ )|| (spike==1) )
+    {
+     S_.v_ = P_.c_;
+      S_.u_ = S_.u_ + P_.d_;
+
+    }
   }
 }
 
