@@ -144,11 +144,14 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     while ( i < post_spikes.size() && post_spikes[i] <= pre_spikes_[j] )
     {
       int dt = post_spikes[i] - pre_spikes_[j-1];
-      if (post_spikes[i] == pre_spikes_[j])
-        dt = 0.;
+      //TODO we needed that for something.. for what?
+      //if (post_spikes[i] == pre_spikes_[j])
+      //{
+      //  dt = 0.;
+      //}
       // facilitation (also for t_pre_spike == t_post_spike)
-      wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt);
-      //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
+      wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt - 1);
+      //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt - 1) << std::endl;
       //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
       K_minus_ = 1.0;
      // if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
@@ -174,7 +177,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   {
     // facilitation
     int dt = post_spikes[i] - pre_spikes_[j-1];
-    wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt);
+    wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt - 1);
     //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
     //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
     K_minus_ = 1.0;
