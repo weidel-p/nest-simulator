@@ -138,7 +138,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
       post_spikes.insert(post_spikes.begin(), t_last_post_spike_);
   }
 
-  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] < t_trig; ++j )
+  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] <= t_trig; ++j )
   {
 
     while ( i < post_spikes.size() && post_spikes[i] < pre_spikes_[j] )
