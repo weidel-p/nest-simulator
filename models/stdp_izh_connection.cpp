@@ -132,6 +132,11 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   //    std::cout << post_spikes[k] << " ";
   //}
   //std::cout << std::endl;
+  FILE	*fssd;
+
+
+
+  fssd = fopen("/home/robin/Re-Polychronization-Computation-With-Spikes/data/NEST_model/ssd.dat","a");
 
   if (post_spikes[0] == t_last_update_){
 
@@ -145,13 +150,13 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     {
       int dt = post_spikes[i] - pre_spikes_[j-1];
       //TODO we needed that for something.. for what?
-      //if (post_spikes[i] == pre_spikes_[j])
-      //{
-      //  dt = 0.;
-      //}
+      if (post_spikes[i] == pre_spikes_[j])
+      {
+        dt = 0.;
+      }
       // facilitation (also for t_pre_spike == t_post_spike)
       wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt );
-      //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+//      std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
       //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
       K_minus_ = 1.0;
      // if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
@@ -162,8 +167,8 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     // depression (also for t_pre_spike == t_post_spike)
     int dt = pre_spikes_[j] - post_spikes[i-1];
     wdev_ -= alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1);
-    //std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_<< " LTD " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)  << std::endl;
-    //K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
+//    std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_<< " LTD " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)  << std::endl;
+//    K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
     K_plus_ = 1.0;
     //if (pre_spikes_[j] > 76000 and pre_spikes_[j] < 78000 or true)
     //    std::cout << "decrement for pre spike at " << pre_spikes_[j] << " sd " << wdev_ << " LTP " << lambda_ * K_plus_ << " LTD " << alpha_ * lambda_ * K_minus_ *  std::pow(0.95, dt) << std::endl; 
@@ -199,6 +204,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     w_new = weight_ + wdev_ + 0.01; 
   }
 
+
   //std::cout << "before boundary check weight = " << w_new << std::endl;
   if ( w_new > 0.0 )
   {
@@ -215,8 +221,10 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   {
     weight_ = 0.0;
   }
-  //std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
-  //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
+//  std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
+  fprintf(fssd, "%8.4f\t%8.4f \n", weight_,wdev_);
+
+//std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
@@ -231,6 +239,8 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 
   t_last_update_ = t_trig;
   t_last_post_spike_ = post_spikes[post_spikes.size()-1];
+  fclose(fssd);
+
 }
 
 } // of namespace nest
