@@ -178,6 +178,7 @@ private:
   double t_last_post_spike_;
   bool   consistent_integration_;
   std::vector< double > pre_spikes_;
+  bool plot_;
 };
 
 
