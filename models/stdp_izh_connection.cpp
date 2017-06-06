@@ -43,6 +43,7 @@ STDPIzhConnection::STDPIzhConnection()
   , t_last_update_(0.0)
   , t_last_post_spike_(0.0)
   , consistent_integration_(true)
+  , plot_(false)
 {
   pre_spikes_.clear();
   pre_spikes_.push_back(-std::numeric_limits<double>::max());
@@ -62,6 +63,7 @@ STDPIzhConnection::STDPIzhConnection( const STDPIzhConnection& rhs )
   , t_last_update_( rhs.t_last_update_ )
   , t_last_post_spike_( rhs.t_last_post_spike_ )
   , consistent_integration_( rhs.consistent_integration_ )
+  , plot_( rhs.plot_)
 {
   pre_spikes_.clear();
   pre_spikes_.push_back(-10000);
@@ -81,6 +83,7 @@ STDPIzhConnection::get_status( DictionaryDatum& d ) const
   def< double >( d, "alpha", alpha_);
   def< double >( d, "Wmax", Wmax_);
   def< bool >( d, "consistent_integration", consistent_integration_);
+  def< bool >( d, "plot", plot_);
 }
 
 void
@@ -95,6 +98,7 @@ STDPIzhConnection::set_status( const DictionaryDatum& d, ConnectorModel& cm )
   updateValue< double >( d, "alpha", alpha_);
   updateValue< double >( d, "Wmax", Wmax_);
   updateValue< bool >( d, "consistent_integration", consistent_integration_);
+  updateValue< bool >( d, "plot", plot_);
 }
 
 void
@@ -136,7 +140,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 
 
 
-  fssd = fopen("/home/robin/Re-Polychronization-Computation-With-Spikes/data/NEST_model/ssd.dat","a");
+  fssd = fopen("ssd.dat","a");
 
   if (post_spikes[0] == t_last_update_){
 
@@ -156,7 +160,10 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
       }
       // facilitation (also for t_pre_spike == t_post_spike)
       wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt );
-//      std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+      if (plot_){
+        //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+      }
       //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
       K_minus_ = 1.0;
      // if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
@@ -167,7 +174,10 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     // depression (also for t_pre_spike == t_post_spike)
     int dt = pre_spikes_[j] - post_spikes[i-1];
     wdev_ -= alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1);
-//    std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_<< " LTD " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)  << std::endl;
+    if (plot_){
+        //std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_<< " LTD " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)  << std::endl;
+        std::cout << "LTD " << pre_spikes_[j] << " " << post_spikes[i-1] << " " << wdev_  << " " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)<< std::endl;
+    }
 //    K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
     K_plus_ = 1.0;
     //if (pre_spikes_[j] > 76000 and pre_spikes_[j] < 78000 or true)
@@ -183,7 +193,11 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     // facilitation
     int dt = post_spikes[i] - pre_spikes_[j-1];
     wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt );
-    //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_<< " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+
+    if (plot_){
+        //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_<< " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
+    }
     //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
     K_minus_ = 1.0;
     //if (post_spikes[i] > 76000 and post_spikes[i] < 78000 or true)
@@ -221,7 +235,9 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   {
     weight_ = 0.0;
   }
-//  std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
+  if (plot_){
+    //std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
+  }
   fprintf(fssd, "%8.4f\t%8.4f \n", weight_,wdev_);
 
 //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
