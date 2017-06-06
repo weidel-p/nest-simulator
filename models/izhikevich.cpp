@@ -61,6 +61,10 @@ RecordablesMap< izhikevich >::create()
   // use standard names whereever you can for consistency!
   insert_( names::V_m, &izhikevich::get_V_m_ );
   insert_( names::U_m, &izhikevich::get_U_m_ );
+  insert_( names::I, &izhikevich::get_I_ );
+  insert_( "combined_current", &izhikevich::get_combined_current_ );
+
+
 }
 }
 
@@ -235,14 +239,17 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       const STDPIzhConnection* syn = reinterpret_cast< STDPIzhConnection* >( static_cast< long >( ev_weight ) );
       I_syn += syn->get_weight();
     }
-    int spike=0;
-    // threshold crossing
-    if ( S_.v_ >= P_.V_th_ )
-    {
-      S_.v_ = P_.c_;
-      S_.u_ = S_.u_ + P_.d_;
-       spike=1;
-     }
+
+    S_.combined_current_=S_.I_+I_syn;
+
+//    int spike=0;
+//    // threshold crossing
+//    if ( S_.v_ >= P_.V_th_ )
+//    {
+//      S_.v_ = P_.c_;
+//      S_.u_ = S_.u_ + P_.d_;
+//       spike=1;
+//     }
 
 
     // neuron is never refractory
@@ -267,8 +274,22 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
                            + S_.I_ + P_.I_e_ + I_syn );
       S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
     }
-    if ( (S_.v_ >= P_.V_th_ )|| (spike==1) )
+
+
+    // lower bound of membrane potential
+    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
+
+    
+    // set new input current
+    S_.I_ = B_.currents_.get_value( lag );
+
+
+    // voltage logging
+    B_.logger_.record_data( origin.get_steps() + lag );
+
+    if ( (S_.v_ >= P_.V_th_ ))//|| (spike==1) )
     {
+
     // compute spike time
       set_spiketime( Time::step( origin.get_steps() + lag+1 ) );
 
@@ -278,20 +299,8 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
 
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
-    }
 
-    // lower bound of membrane potential
-    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
-
-    
-    // set new input current
-    S_.I_ = B_.currents_.get_value( lag );
-
-    // voltage logging
-    B_.logger_.record_data( origin.get_steps() + lag );
-    if ( (S_.v_ >= P_.V_th_ )|| (spike==1) )
-    {
-     S_.v_ = P_.c_;
+      S_.v_ = P_.c_;
       S_.u_ = S_.u_ + P_.d_;
 
     }
