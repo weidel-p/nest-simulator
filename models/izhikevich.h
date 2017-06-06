@@ -176,6 +176,7 @@ private:
     double v_; // membrane potential
     double u_; // membrane recovery variable
     double I_; // input current
+    double combined_current_;
 
 
     /** Accumulate spikes arriving during refractory period, discounted for
@@ -232,6 +233,18 @@ private:
   get_U_m_() const
   {
     return S_.u_;
+  }
+
+  double
+  get_I_() const
+  {
+    return S_.I_;
+  }
+
+  double
+  get_combined_current_() const
+  {
+    return S_.combined_current_;
   }
 
   // ----------------------------------------------------------------
