@@ -31,7 +31,6 @@
 #include "ring_buffer.h"
 #include "../precise/slice_ring_buffer.h"
 #include "universal_data_logger.h"
-#include "math.h"
 
 namespace nest
 {

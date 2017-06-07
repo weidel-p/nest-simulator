@@ -225,36 +225,52 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     ++i;
   }
   
-   
-  double w_new = 0;
-  if ( consistent_integration_ )
-  {
-    w_new = weight_ + wdev_; 
-    wdev_ = 0.0;
-  }
-  else
-  {
-    wdev_ *= 0.9;
-    w_new = weight_ + wdev_ + 0.01; 
-  }
+//   			sd[i][j]*=0.9;
+////			//debug
+//			if ((i<N_stdp))
+//			{
+//			s[i][j]+=0.01+sd[i][j];
+//			if (s[i][j]>C_max) s[i][j]=C_max;
+//			if (s[i][j]<0) s[i][j]=0;
+//
+  wdev_ *= 0.9;
+  weight_ += 0.01 + wdev_;
+  if (weight_ > Wmax_)
+     weight_ = Wmax_;
+  if (weight_ < 0)
+     weight_ = 0; 
+
+  //double w_new = 0;
+  //if ( consistent_integration_ )
+  //{
+  //  w_new = weight_ + wdev_; 
+  //  wdev_ = 0.0;
+  //}
+  //else
+  //{
+  //  wdev_ *= 0.9;
+  //  w_new = weight_ + wdev_ + 0.01; 
+  //}
 
 
-  //std::cout << "before boundary check weight = " << w_new << std::endl;
-  if ( w_new > 0.0 )
-  {
-    if ( w_new < Wmax_ )
-    {
-      weight_ = w_new;
-    }
-    else
-    {
-      weight_ = Wmax_;
-    }
-  }
-  else
-  {
-    weight_ = 0.0;
-  }
+  ////std::cout << "before boundary check weight = " << w_new << std::endl;
+  //if ( w_new > 0.0 )
+  //{
+  //  if ( w_new < Wmax_ )
+  //  {
+  //    weight_ = w_new;
+  //  }
+  //  else
+  //  {
+  //    weight_ = Wmax_;
+  //  }
+  //}
+  //else
+  //{
+  //  weight_ = 0.0;
+  //}
+  
+  
   if (plot_){
     //std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
   }
