@@ -65,11 +65,34 @@
 namespace nest
 {
 
+class STDPIzhCommonProperties : public CommonSynapseProperties
+{
+public:
+  /**
+   * Default constructor.
+   * Sets all property values to defaults.
+   */
+  STDPIzhCommonProperties();
+
+  /**
+   * Get all properties and put them into a dictionary.
+   */
+  void get_status( DictionaryDatum& d ) const {};
+
+  /**
+   * Set properties from the values given in dictionary.
+   */
+  void set_status( const DictionaryDatum& d, ConnectorModel& cm ) {};
+
+  std::vector< double >* pow_0_95_K_plus_;
+  std::vector< double >* pow_0_95_K_minus_;
+};
+
 class STDPIzhConnection : public Connection< TargetIdentifierPtrRport >
 {
 
 public:
-  typedef CommonSynapseProperties CommonPropertiesType;
+  typedef STDPIzhCommonProperties CommonPropertiesType;
   typedef Connection< TargetIdentifierPtrRport > ConnectionBase;
 
   /**
