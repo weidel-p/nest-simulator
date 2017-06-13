@@ -141,6 +141,8 @@ nest::izhikevich::State_::set( const DictionaryDatum& d, const Parameters_& )
 {
   updateValue< double >( d, names::U_m, u_ );
   updateValue< double >( d, names::V_m, v_ );
+  updateValue< double >( d, names::I, I_ );
+
 }
 
 nest::izhikevich::Buffers_::Buffers_( izhikevich& n )
@@ -240,7 +242,9 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       I_syn += syn->get_weight();
     }
 
-    S_.combined_current_=S_.I_+I_syn;
+    S_.combined_current_= S_.I_+I_syn;
+
+    //S_.combined_current_ = round(S_.combined_current_ * 100000000.) / 100000000.;
 
 //    int spike=0;
 //    // threshold crossing
@@ -267,17 +271,29 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
     else
     {
       //v[i]+=0.5*((0.04*v[i]+5)*v[i]+140-u[i]+I[i]);
+      //S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
+      //                     + S_.I_ + P_.I_e_ + I_syn );
+      //S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
+      //                     + S_.I_ + P_.I_e_ + I_syn );
+      //S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
 
-      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
-                           + S_.I_ + P_.I_e_ + I_syn );
-      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5.) * S_.v_  + 140.0 - S_.u_
-                           + S_.I_ + P_.I_e_ + I_syn );
-      S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
+      S_.v_ += 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.combined_current_ );
+      S_.v_ += 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.combined_current_ );
+      S_.u_ += P_.a_ * ( 0.2 * S_.v_ - S_.u_ );
     }
 
+//				v[i]+=0.5*((0.04*v[i]+5)*v[i]+140.-u[i]+I[i]);
+//				v[i]+=0.5*((0.04*v[i]+5)*v[i]+140.-u[i]+I[i]);
+//
+////				u = u + a.*(0.2*v-u);
+//				u[i]+=a[i]*(0.2*v[i]-u[i]);
+    //S_.v_ = round(S_.v_ * 10000.) / 10000.;
+    //S_.u_ = round(S_.u_ * 10000.) / 10000.;
 
     // lower bound of membrane potential
-    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
+    //S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
+    if (S_.v_ < P_.V_min_)
+        S_.v_ = P_.V_min_;
 
     
     // set new input current
