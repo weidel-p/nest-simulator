@@ -159,11 +159,11 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   //    std::cout << post_spikes[k] << " ";
   //}
   //std::cout << std::endl;
-  FILE	*fssd;
+//  FILE	*fssd;
 
 
 
-  fssd = fopen("ssd.dat","a");
+  //fssd = fopen("ssd.dat","a");
 
   if (post_spikes[0] == t_last_update_){
 
@@ -305,7 +305,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
   if (plot_){
     //std::cout << "end of second " <<  t_trig << " s " << weight_ << " sd " << wdev_ << std::endl;
   }
-  fprintf(fssd, "%21.17f\t%21.17f \n", weight_,wdev_);
+//  fprintf(fssd, "%21.17f\t%21.17f \n", weight_,wdev_);
 
 //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
 
@@ -322,7 +322,7 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 
   t_last_update_ = t_trig;
   t_last_post_spike_ = post_spikes[post_spikes.size()-1];
-  fclose(fssd);
+//  fclose(fssd);
 
 }
 
