@@ -485,7 +485,11 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   // update weight with forward euler
   //double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
   //                    std::pow(n_diff, 2) * (t1 - t0); 
-  double dw = cp.A_ * Kplus_short_* Kminus_short * n_diff;
+  
+  double dw = 0;
+  if (Kminus_short > cp.b_){
+      dw = cp.A_ * Kplus_short_* n_diff;
+  }
 
 
   if (dw > 0){
