@@ -32,20 +32,41 @@ namespace nest
 
 STDPIzhCommonProperties::STDPIzhCommonProperties()
   : CommonSynapseProperties()
+  , LTP_(0.1)
+  , LTD_(-0.12)
+  , tau_LTP_(20.0)
+  , tau_LTD_(20.0)
+  , Wmax_(10.0)
+  , tau_syn_update_interval_(10.)
+  , constant_additive_value_(0.01)
 {
-  pow_0_95_K_plus_ = new std::vector< double >(); 
-  pow_0_95_K_minus_ = new std::vector< double >(); 
+}
 
-  double tmp_0_1 = 0.1;
-  double tmp_0_12 = 0.12;
-  for (int i = 0; i < 20001; ++i)
-  {
-    pow_0_95_K_plus_->push_back(tmp_0_1);
-    pow_0_95_K_minus_->push_back(tmp_0_12);
+void
+STDPIzhCommonProperties::get_status( DictionaryDatum& d ) const
+{
+  CommonSynapseProperties::get_status( d );
+  def< double >( d, "LTP", LTP_);
+  def< double >( d, "LTD", LTD_);
+  def< double >( d, "tau_LTP", tau_LTP_);
+  def< double >( d, "tau_LTD", tau_LTD_);
+  def< double >( d, "Wmax", Wmax_);
+  def< double >( d, "tau_syn_update_interval", tau_syn_update_interval_ );
+  def< double >( d, "constant_additive_value", constant_additive_value_ );
+}
 
-    tmp_0_1 *= 0.95;
-    tmp_0_12 *= 0.95;
-  }
+void
+STDPIzhCommonProperties::set_status( const DictionaryDatum& d,
+  ConnectorModel& cm )
+{
+  CommonSynapseProperties::set_status( d, cm );
+  updateValue< double >( d, "LTP", LTP_);
+  updateValue< double >( d, "LTD", LTD_);
+  updateValue< double >( d, "tau_LTP", tau_LTP_);
+  updateValue< double >( d, "tau_LTD", tau_LTD_);
+  updateValue< double >( d, "Wmax", Wmax_);
+  updateValue< double >( d, "tau_syn_update_interval", tau_syn_update_interval_ );
+  updateValue< double >( d, "constant_additive_value", constant_additive_value_ );
 }
 
 
@@ -53,13 +74,6 @@ STDPIzhConnection::STDPIzhConnection()
   : ConnectionBase()
   , weight_(1.0)
   , wdev_(0.0)
-  , K_plus_(0.0)
-  , K_minus_(0.0)
-  , tau_plus_(20.0)
-  , tau_minus_(20.0)
-  , lambda_(0.1)
-  , alpha_(1.2)
-  , Wmax_(10.0)
   , t_last_update_(0.0)
   , t_last_post_spike_(0.0)
   , consistent_integration_(true)
@@ -75,13 +89,6 @@ STDPIzhConnection::STDPIzhConnection( const STDPIzhConnection& rhs )
   : ConnectionBase( rhs )
   , weight_( rhs.weight_ )
   , wdev_( rhs.wdev_ )
-  , K_plus_( rhs.K_plus_ )
-  , K_minus_( rhs. K_minus_ )
-  , tau_plus_( rhs.tau_plus_ )
-  , tau_minus_( rhs. tau_minus_ )
-  , lambda_( rhs.lambda_ )
-  , alpha_( rhs.alpha_ )
-  , Wmax_( rhs.Wmax_ )
   , t_last_update_( rhs.t_last_update_ )
   , t_last_post_spike_( rhs.t_last_post_spike_ )
   , consistent_integration_( rhs.consistent_integration_ )
@@ -98,13 +105,7 @@ STDPIzhConnection::get_status( DictionaryDatum& d ) const
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
   def< double >( d, "wdev", wdev_);
-  def< double >( d, "K_plus", K_plus_);
-  def< double >( d, "K_minus", K_minus_);
-  def< double >( d, "tau_plus", tau_plus_);
-  def< double >( d, "tau_minus", tau_minus_);
-  def< double >( d, "lambda", lambda_);
-  def< double >( d, "alpha", alpha_);
-  def< double >( d, "Wmax", Wmax_);
+
   def< bool >( d, "consistent_integration", consistent_integration_);
   def< bool >( d, "plot", plot_);
 }
@@ -115,11 +116,7 @@ STDPIzhConnection::set_status( const DictionaryDatum& d, ConnectorModel& cm )
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, "wdev", wdev_);
-  updateValue< double >( d, "tau_plus", tau_plus_);
-  updateValue< double >( d, "tau_minus", tau_minus_);
-  updateValue< double >( d, "lambda", lambda_);
-  updateValue< double >( d, "alpha", alpha_);
-  updateValue< double >( d, "Wmax", Wmax_);
+
   updateValue< bool >( d, "consistent_integration", consistent_integration_);
   updateValue< bool >( d, "plot", plot_);
 }
@@ -190,11 +187,12 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
       //wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt );
       //wdev_ += K_plus_tmp;
       
-      wdev_ += cp.pow_0_95_K_plus_->at(dt);
+      //wdev_ += cp.pow_0_95_K_plus_->at(dt);
+      wdev_ += cp.LTP_ * std::exp( -dt / cp.tau_LTP_ );
       
       if (plot_){
         //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_  << " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
-        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << cp.pow_0_95_K_plus_->at(dt) << std::endl;
+        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << std::endl;
       }
       //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
       //K_minus_ = 0.12;
@@ -214,11 +212,12 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     //wdev_ -= alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1);
     //wdev_ -= K_minus_tmp;
     
-    wdev_ -= cp.pow_0_95_K_minus_->at(dt-1);
+    //wdev_ -= cp.pow_0_95_K_minus_->at(dt-1);
+    wdev_ += cp.LTD_ * std::exp( -(dt-1) / cp.tau_LTD_ );
     
     if (plot_){
         //std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_<< " LTD " << alpha_ * lambda_ * K_minus_ * std::pow(0.95, dt-1)  << std::endl;
-        std::cout << "LTD " << pre_spikes_[j] << " " << post_spikes[i-1] << " " << wdev_  << " " <<  cp.pow_0_95_K_minus_->at(dt-1) << std::endl;
+        std::cout << "LTD " << pre_spikes_[j] << " " << post_spikes[i-1] << " " << wdev_  << std::endl;
     }
 //    K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
     //K_plus_ = 0.1;
@@ -243,11 +242,12 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     //wdev_ += lambda_ * K_plus_ * std::pow(0.95, dt );
     //wdev_ += K_plus_tmp;
     
-    wdev_ += cp.pow_0_95_K_plus_->at(dt);
+    //wdev_ += cp.pow_0_95_K_plus_->at(dt);
+    wdev_ += cp.LTP_ * std::exp( -dt / cp.tau_LTP_ );
 
     if (plot_){
         //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_<< " LTP = " << lambda_ * K_plus_ * std::pow(0.95, dt ) << std::endl;
-        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << cp.pow_0_95_K_plus_->at(dt) << std::endl;
+        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << std::endl;
     }
     //K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
     //K_minus_ = 0.12;
@@ -264,10 +264,12 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 //			if (s[i][j]>C_max) s[i][j]=C_max;
 //			if (s[i][j]<0) s[i][j]=0;
 //
-  wdev_ *= 0.9;
-  weight_ += 0.01 + wdev_;
-  if (weight_ > Wmax_)
-     weight_ = Wmax_;
+  //wdev_ *= 0.9;
+  wdev_ *= std::exp( - kernel().simulation_manager.get_syn_update_interval() / 1000. / cp.tau_syn_update_interval_ );
+  //weight_ += 0.01 + wdev_;
+  weight_ += cp.constant_additive_value_ / cp.tau_syn_update_interval_ + wdev_;
+  if (weight_ > cp.Wmax_)
+     weight_ = cp.Wmax_;
   if (weight_ < 0)
      weight_ = 0; 
 

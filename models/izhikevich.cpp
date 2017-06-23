@@ -61,10 +61,6 @@ RecordablesMap< izhikevich >::create()
   // use standard names whereever you can for consistency!
   insert_( names::V_m, &izhikevich::get_V_m_ );
   insert_( names::U_m, &izhikevich::get_U_m_ );
-  insert_( names::I, &izhikevich::get_I_ );
-  insert_( "combined_current", &izhikevich::get_combined_current_ );
-
-
 }
 }
 
@@ -242,20 +238,6 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       I_syn += syn->get_weight();
     }
 
-    S_.combined_current_= S_.I_+I_syn;
-
-    //S_.combined_current_ = round(S_.combined_current_ * 100000000.) / 100000000.;
-
-//    int spike=0;
-//    // threshold crossing
-//    if ( S_.v_ >= P_.V_th_ )
-//    {
-//      S_.v_ = P_.c_;
-//      S_.u_ = S_.u_ + P_.d_;
-//       spike=1;
-//     }
-
-
     // neuron is never refractory
     // use standard forward Euler numerics in this case
     if ( P_.consistent_integration_ )
@@ -277,49 +259,37 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       //                     + S_.I_ + P_.I_e_ + I_syn );
       //S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
 
-      S_.v_ += 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.combined_current_ );
-      S_.v_ += 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.combined_current_ );
-      S_.u_ += P_.a_ * ( 0.2 * S_.v_ - S_.u_ );
+      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn  );
+      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn  );
+      S_.u_ += h * P_.a_ * ( 0.2 * S_.v_ - S_.u_ );
     }
 
-//				v[i]+=0.5*((0.04*v[i]+5)*v[i]+140.-u[i]+I[i]);
-//				v[i]+=0.5*((0.04*v[i]+5)*v[i]+140.-u[i]+I[i]);
-//
-////				u = u + a.*(0.2*v-u);
-//				u[i]+=a[i]*(0.2*v[i]-u[i]);
-    //S_.v_ = round(S_.v_ * 10000.) / 10000.;
-    //S_.u_ = round(S_.u_ * 10000.) / 10000.;
-
     // lower bound of membrane potential
-    //S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
-    if (S_.v_ < P_.V_min_)
-        S_.v_ = P_.V_min_;
-
-    
-    // set new input current
-    S_.I_ = B_.currents_.get_value( lag );
-
+    S_.v_ = ( S_.v_ < P_.V_min_ ? P_.V_min_ : S_.v_ );
 
     // voltage logging
     B_.logger_.record_data( origin.get_steps() + lag );
 
-    if ( (S_.v_ >= P_.V_th_ ))//|| (spike==1) )
+    // threshold crossing
+    if ( S_.v_ >= P_.V_th_ )
     {
-
-    // compute spike time
-      set_spiketime( Time::step( origin.get_steps() + lag+1 ) );
-
-      // keeps track of spike history for STDPIzhConnections
-      // cleared every syn_update_interval
-      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag+1)).get_ms() );
-
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
-
       S_.v_ = P_.c_;
       S_.u_ = S_.u_ + P_.d_;
 
+      // compute spike time
+      set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
+
+      // keeps track of spike history for STDPIzhConnections
+      // cleared every syn_update_interval
+      B_.post_spikes_.push_back( Time(Time::step( origin.get_steps() + lag + 1 )).get_ms() );
+
+      SpikeEvent se;
+      kernel().event_delivery_manager.send( *this, se, lag );
     }
+
+    // set new input current
+    S_.I_ = B_.currents_.get_value( lag );
+
   }
 }
 

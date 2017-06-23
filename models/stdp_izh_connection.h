@@ -32,8 +32,8 @@
    dependent plasticity (as defined in [1]).
 
   Parameters:
-   tau_plus   double - Time constant of STDP window, potentiation in ms
-   tau_minus  double - Time constant of STDP window, depression in ms
+   tau_LTP   double - Time constant of STDP window, potentiation in ms
+   tau_LTD  double - Time constant of STDP window, depression in ms
    lambda     double - Step size
    alpha      double - Asymmetry parameter (scales depressing increments as
                        alpha*lambda)
@@ -77,15 +77,21 @@ public:
   /**
    * Get all properties and put them into a dictionary.
    */
-  void get_status( DictionaryDatum& d ) const {};
+  void get_status( DictionaryDatum& d ) const; 
 
   /**
    * Set properties from the values given in dictionary.
    */
-  void set_status( const DictionaryDatum& d, ConnectorModel& cm ) {};
+  void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
-  std::vector< double >* pow_0_95_K_plus_;
-  std::vector< double >* pow_0_95_K_minus_;
+  double LTP_;
+  double LTD_;
+  double tau_LTP_;
+  double tau_LTD_;
+  double Wmax_;
+
+  double tau_syn_update_interval_;
+  double constant_additive_value_;
 };
 
 class STDPIzhConnection : public Connection< TargetIdentifierPtrRport >
@@ -190,13 +196,7 @@ private:
   // data members of each connection
   double weight_;
   double wdev_;
-  double K_plus_;
-  double K_minus_;
-  double tau_plus_;
-  double tau_minus_;
-  double lambda_;
-  double alpha_;
-  double Wmax_;
+
   double t_last_update_;
   double t_last_post_spike_;
   bool   consistent_integration_;

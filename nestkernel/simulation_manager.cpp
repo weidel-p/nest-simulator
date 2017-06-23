@@ -370,7 +370,7 @@ nest::SimulationManager::get_status( DictionaryDatum& d )
   def< long >( d, "wfr_max_iterations", wfr_max_iterations_ );
   def< long >( d, "wfr_interpolation_order", wfr_interpolation_order_ );
 
-  def< long >( d, "syn_update_interval_", syn_update_interval_ );
+  def< long >( d, "syn_update_interval", syn_update_interval_ );
 }
 
 void
