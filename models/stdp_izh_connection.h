@@ -237,7 +237,7 @@ STDPIzhConnection::send( Event& e,
   e.set_weight( static_cast< double >( reinterpret_cast< long >(this) ) );
   // Default multiplicity is 1
   // Use multiplicity -1 to signal to postsynaptic neuron that this
-  // event is delivered through an STDPIzhConnection
+  // event is delivered through an STDPIzhCitwiseCorrectConnection
   e.set_multiplicity( -1 );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );

@@ -65,34 +65,11 @@
 namespace nest
 {
 
-class STDPIzhNaiveCommonProperties : public CommonSynapseProperties
-{
-public:
-  /**
-   * Default constructor.
-   * Sets all property values to defaults.
-   */
-  STDPIzhNaiveCommonProperties();
-
-  /**
-   * Get all properties and put them into a dictionary.
-   */
-  void get_status( DictionaryDatum& d ) const {};
-
-  /**
-   * Set properties from the values given in dictionary.
-   */
-  void set_status( const DictionaryDatum& d, ConnectorModel& cm ) {};
-
-  std::vector< double >* pow_0_95_K_plus_;
-  std::vector< double >* pow_0_95_K_minus_;
-};
-
 class STDPIzhNaiveConnection : public Connection< TargetIdentifierPtrRport >
 {
 
 public:
-  typedef STDPIzhNaiveCommonProperties CommonPropertiesType;
+  typedef CommonSynapseProperties CommonPropertiesType;
   typedef Connection< TargetIdentifierPtrRport > ConnectionBase;
 
   /**
@@ -198,10 +175,8 @@ private:
   double alpha_;
   double Wmax_;
   double t_last_update_;
-  double t_last_post_spike_;
   bool   consistent_integration_;
   std::vector< double > pre_spikes_;
-  bool plot_;
 };
 
 
@@ -237,7 +212,7 @@ STDPIzhNaiveConnection::send( Event& e,
   e.set_weight( static_cast< double >( reinterpret_cast< long >(this) ) );
   // Default multiplicity is 1
   // Use multiplicity -1 to signal to postsynaptic neuron that this
-  // event is delivered through an STDPIzhCitwiseCorrectConnection
+  // event is delivered through an STDPIzhNaiveConnection
   e.set_multiplicity( -1 );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
