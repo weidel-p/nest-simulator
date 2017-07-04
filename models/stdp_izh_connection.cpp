@@ -39,6 +39,7 @@ STDPIzhCommonProperties::STDPIzhCommonProperties()
   , Wmax_(10.0)
   , tau_syn_update_interval_(10000.)
   , constant_additive_value_(0.01)
+  , reset_weight_change_(false)
 {
 }
 
@@ -53,6 +54,7 @@ STDPIzhCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, "Wmax", Wmax_);
   def< double >( d, "tau_syn_update_interval", tau_syn_update_interval_ );
   def< double >( d, "constant_additive_value", constant_additive_value_ );
+  def< bool >( d, "reset_weight_change_after_update", reset_weight_change_ );
 }
 
 void
@@ -67,6 +69,7 @@ STDPIzhCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, "Wmax", Wmax_);
   updateValue< double >( d, "tau_syn_update_interval", tau_syn_update_interval_ );
   updateValue< double >( d, "constant_additive_value", constant_additive_value_ );
+  updateValue< bool >( d, "reset_weight_change_after_update", reset_weight_change_ );
 }
 
 
@@ -76,7 +79,6 @@ STDPIzhConnection::STDPIzhConnection()
   , wdev_(0.0)
   , t_last_update_(0.0)
   , t_last_post_spike_(0.0)
-  , consistent_integration_(true)
 {
   pre_spikes_.clear();
   //pre_spikes_.push_back(-std::numeric_limits<double>::max());
@@ -90,7 +92,6 @@ STDPIzhConnection::STDPIzhConnection( const STDPIzhConnection& rhs )
   , wdev_( rhs.wdev_ )
   , t_last_update_( rhs.t_last_update_ )
   , t_last_post_spike_( rhs.t_last_post_spike_ )
-  , consistent_integration_( rhs.consistent_integration_ )
 {
   pre_spikes_.clear();
   pre_spikes_.push_back(-10000);
@@ -104,7 +105,6 @@ STDPIzhConnection::get_status( DictionaryDatum& d ) const
   def< double >( d, names::weight, weight_ );
   def< double >( d, "wdev", wdev_);
 
-  def< bool >( d, "consistent_integration", consistent_integration_);
 }
 
 void
@@ -114,7 +114,6 @@ STDPIzhConnection::set_status( const DictionaryDatum& d, ConnectorModel& cm )
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, "wdev", wdev_);
 
-  updateValue< bool >( d, "consistent_integration", consistent_integration_);
 }
 
 void
@@ -168,12 +167,18 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
     ++i;
   }
   
-  wdev_ *= std::exp( - kernel().simulation_manager.get_syn_update_interval() / cp.tau_syn_update_interval_ );
+  if ( cp.tau_syn_update_interval_ != 0. )
+    wdev_ *= std::exp( -kernel().simulation_manager.get_syn_update_interval() / cp.tau_syn_update_interval_ );
+
   weight_ += cp.constant_additive_value_ * (kernel().simulation_manager.get_syn_update_interval() / 1000.) + wdev_;
+
   if (weight_ > cp.Wmax_)
      weight_ = cp.Wmax_;
   if (weight_ < 0)
      weight_ = 0; 
+
+  if ( cp.reset_weight_change_ )
+      wdev_ = 0.0;
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update

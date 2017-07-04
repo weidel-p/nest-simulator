@@ -92,6 +92,7 @@ public:
 
   double tau_syn_update_interval_;
   double constant_additive_value_;
+  bool reset_weight_change_;
 };
 
 class STDPIzhConnection : public Connection< TargetIdentifierPtrRport >
@@ -199,7 +200,6 @@ private:
 
   double t_last_update_;
   double t_last_post_spike_;
-  bool   consistent_integration_;
   std::vector< double > pre_spikes_;
 };
 
