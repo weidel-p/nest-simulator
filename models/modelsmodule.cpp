@@ -79,6 +79,7 @@
 #include "gif_psc_exp_multisynapse.h"
 #include "gif_cond_exp.h"
 #include "gif_cond_exp_multisynapse.h"
+#include "spike_response_0.h"
 
 // Stimulation devices
 #include "ac_generator.h"
@@ -245,6 +246,8 @@ ModelsModule::init( SLIInterpreter* )
     "correlospinmatrix_detector" );
   kernel().model_manager.register_node_model< volume_transmitter >(
     "volume_transmitter" );
+
+  kernel().model_manager.register_node_model< spike_response_0 >( "SRM0" );
 
   // Create voltmeter as a multimeter pre-configured to record V_m.
   /*BeginDocumentation
