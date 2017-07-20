@@ -36,14 +36,14 @@ for t in np.linspace(0, 20, 200):
 plt.figure()
 
 
-nest.SetKernelStatus({"resolution": 1.0, "print_time": True})
+nest.SetKernelStatus({"resolution": 1.0, "print_time": False})
 
 n = nest.Create("SRM0", params={"tau_syn": tau_syn, "tau_m": tau_mem, "xi": -5.0, "theta": 16., "du": 2., "rho0": 60.0})
 mm = nest.Create("multimeter", params={"record_from": ["V_m"]})
-pg = nest.Create("poisson_generator", params={"rate": 2000.})
+pg = nest.Create("poisson_generator", params={"rate": 1000.})
 sd = nest.Create("spike_detector")
 
-nest.Connect(pg, n, syn_spec={"weight": 1.5})
+nest.Connect(pg, n, syn_spec={"weight": 3.5})
 nest.Connect(pg, n, syn_spec={"weight": -1.})
 nest.Connect(mm, n)
 nest.Connect(n, sd)
@@ -51,7 +51,7 @@ nest.Connect(n, sd)
 nest.Simulate(2000.)
 
 vtr.from_device(mm)
-#rplt.from_device(sd)
+rplt.from_device(sd)
 
 vtr.show()
 

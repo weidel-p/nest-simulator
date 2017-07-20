@@ -251,11 +251,8 @@ nest::spike_response_0::update( const Time& origin, const long from, const long 
   {
     S_.V_m_ = S_.V_m_ * V_.P22_ + S_.i_syn_ex_ * V_.P21ex_
       + S_.i_syn_in_ * V_.P21in_ 
-      + P_.xi_ * std::exp( (S_.t_last_spike_ - (origin.get_steps() + lag)) / P_.tau_mem_ ) * Time::get_resolution().get_ms();
-    //TODO the last part is Forward Euler..
-    //
+      + P_.xi_ * std::exp( (S_.t_last_spike_ - (origin.get_ms() + lag * Time::get_resolution().get_ms())) / P_.tau_mem_ ) * Time::get_resolution().get_ms();
     
-    std::cout << S_.t_last_spike_ << " " << origin.get_steps() + lag << " " << std::exp( (S_.t_last_spike_ - (origin.get_steps() + lag)) / P_.tau_mem_ ) << std::endl;
     // exponential decaying PSCs
     S_.i_syn_ex_ *= V_.P11ex_;
     S_.i_syn_in_ *= V_.P11in_;
@@ -283,7 +280,7 @@ nest::spike_response_0::update( const Time& origin, const long from, const long 
 
     if ( n_spikes > 0 ) // we must not send events with multiplicity 0
     {
-       S_.t_last_spike_ = origin.get_steps() + lag;
+       S_.t_last_spike_ = origin.get_ms() + lag * Time::get_resolution().get_ms() ;
        set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
        SpikeEvent se;
