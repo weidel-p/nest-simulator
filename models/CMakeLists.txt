@@ -74,6 +74,7 @@ set( models_sources
     sinusoidal_gamma_generator.h sinusoidal_gamma_generator.cpp
     spike_detector.h spike_detector.cpp
     spike_generator.h spike_generator.cpp
+    spike_response_0.h spike_response_0.cpp
     spin_detector.h spin_detector.cpp
     static_connection.h
     static_connection_hom_w.h
