@@ -41,11 +41,11 @@
 #include "doubledatum.h"
 #include "integerdatum.h"
 
+// record time, gid, weight and receiver gid
 nest::weight_recorder::weight_recorder()
   : Node()
-  // record time, gid, weight and receiver gid
   , device_( *this,
-      RecordingDevice::SPIKE_DETECTOR,
+      RecordingDevice::WEIGHT_RECORDER,
       "csv",
       true,
       true,
@@ -66,6 +66,41 @@ nest::weight_recorder::weight_recorder( const weight_recorder& n )
   , local_receiver_( true )
   , P_( n.P_ )
 {
+}
+
+nest::weight_recorder::Parameters_::Parameters_()
+  : senders_()
+  , targets_()
+{
+}
+
+nest::weight_recorder::Parameters_::Parameters_( const Parameters_& p )
+  : senders_( p.senders_ )
+  , targets_( p.targets_ )
+{
+}
+
+void
+nest::weight_recorder::Parameters_::get( DictionaryDatum& d ) const
+{
+  ( *d )[ names::senders ] = senders_;
+  ( *d )[ names::targets ] = targets_;
+}
+
+void
+nest::weight_recorder::Parameters_::set( const DictionaryDatum& d )
+{
+  if ( d->known( names::senders ) )
+  {
+    senders_ = getValue< std::vector< long > >( d->lookup( names::senders ) );
+    std::sort( senders_.begin(), senders_.end() );
+  }
+
+  if ( d->known( names::targets ) )
+  {
+    targets_ = getValue< std::vector< long > >( d->lookup( names::targets ) );
+    std::sort( targets_.begin(), targets_.end() );
+  }
 }
 
 void
@@ -101,7 +136,6 @@ nest::weight_recorder::calibrate()
       // if user explicitly set the precision, there is no need to do anything.
       msg += ".";
     }
-
     else
     {
       // it makes sense to increase the precision if precise models are used.
@@ -109,7 +143,7 @@ nest::weight_recorder::calibrate()
       msg += ", precision has been set to 15.";
     }
 
-    LOG( M_INFO, "spike_detector::calibrate", msg );
+    LOG( M_INFO, "weight_recoder::calibrate", msg );
   }
 
   device_.calibrate();
@@ -146,7 +180,9 @@ nest::weight_recorder::get_status( DictionaryDatum& d ) const
     std::vector< Node* >::const_iterator sibling;
     for ( sibling = siblings->begin() + 1; sibling != siblings->end();
           ++sibling )
+    {
       ( *sibling )->get_status( d );
+    }
   }
 
   P_.get( d );
@@ -156,7 +192,9 @@ void
 nest::weight_recorder::set_status( const DictionaryDatum& d )
 {
   if ( d->known( names::precise_times ) )
+  {
     user_set_precise_times_ = true;
+  }
 
   device_.set_status( d );
 
@@ -171,68 +209,20 @@ nest::weight_recorder::handle( WeightRecorderEvent& e )
   // emitted
   if ( device_.is_active( e.get_stamp() ) )
   {
-    // if timestap of event is not in the recording interval
-    if ( std::fmod( e.get_stamp().get_ms(), P_.interval_ ) > P_.duration_ )
-      return;
-
-    // P_sources_ is defined and sender is not in it
+    // P_senders_ is defined and sender is not in it
     // or P_targets_ is defined and receiver is not in it
-    if ( ( not P_.sources_.empty()
+    if ( ( not P_.senders_.empty()
            and not std::binary_search(
-                 P_.sources_.begin(), P_.sources_.end(), e.get_sender_gid() ) )
+                 P_.senders_.begin(), P_.senders_.end(), e.get_sender_gid() ) )
       or ( not P_.targets_.empty()
            and not std::binary_search( P_.targets_.begin(),
                  P_.targets_.end(),
                  e.get_receiver_gid() ) ) )
+    {
       return;
+    }
 
     WeightRecorderEvent* event = e.clone();
     B_.events_.push_back( *event );
   }
-}
-
-nest::weight_recorder::Parameters_::Parameters_()
-  : sources_()
-  , targets_()
-  , duration_()
-  , interval_()
-{
-}
-
-nest::weight_recorder::Parameters_::Parameters_( const Parameters_& p )
-  : sources_( p.sources_ )
-  , targets_( p.targets_ )
-  , duration_( p.duration_ )
-  , interval_( p.interval_ )
-{
-}
-
-void
-nest::weight_recorder::Parameters_::get( DictionaryDatum& d ) const
-{
-  ( *d )[ names::source ] = sources_;
-  ( *d )[ names::target ] = targets_;
-  ( *d )[ names::duration ] = duration_;
-  ( *d )[ names::interval ] = interval_;
-}
-
-
-void
-nest::weight_recorder::Parameters_::set( const DictionaryDatum& d )
-{
-
-  if ( d->known( names::source ) )
-  {
-    sources_ = getValue< std::vector< long > >( d->lookup( names::source ) );
-    std::sort( sources_.begin(), sources_.end() );
-  }
-
-  if ( d->known( names::target ) )
-  {
-    targets_ = getValue< std::vector< long > >( d->lookup( names::target ) );
-    std::sort( targets_.begin(), targets_.end() );
-  }
-
-  updateValue< double >( d, names::interval, interval_ );
-  updateValue< double >( d, names::duration, duration_ );
 }

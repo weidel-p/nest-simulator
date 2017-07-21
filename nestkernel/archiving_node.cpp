@@ -42,7 +42,9 @@ nest::Archiving_Node::Archiving_Node()
   , Kminus_( 0.0 )
   , triplet_Kminus_( 0.0 )
   , tau_minus_( 20.0 )
+  , tau_minus_inv_( 1. / tau_minus_ )
   , tau_minus_triplet_( 110.0 )
+  , tau_minus_triplet_inv_( 1. / tau_minus_triplet_ )
   , last_spike_( -1.0 )
   , firing_rate_short_( 0.0 )
   , firing_rate_long_( 0.0 )
@@ -62,7 +64,9 @@ nest::Archiving_Node::Archiving_Node( const Archiving_Node& n )
   , Kminus_( n.Kminus_ )
   , triplet_Kminus_( n.triplet_Kminus_ )
   , tau_minus_( n.tau_minus_ )
+  , tau_minus_inv_( n.tau_minus_inv_ )
   , tau_minus_triplet_( n.tau_minus_triplet_ )
+  , tau_minus_triplet_inv_( n.tau_minus_inv_ )
   , last_spike_( n.last_spike_ )
   , firing_rate_short_( n.firing_rate_short_)
   , firing_rate_long_( n.firing_rate_long_)
@@ -107,7 +111,7 @@ nest::Archiving_Node::get_K_value( double t )
     if ( t > history_[ i ].t_ )
     {
       return ( history_[ i ].Kminus_
-        * std::exp( ( history_[ i ].t_ - t ) / tau_minus_ ) );
+        * std::exp( ( history_[ i ].t_ - t ) * tau_minus_inv_ ) );
     }
     i--;
   }
@@ -174,9 +178,9 @@ nest::Archiving_Node::get_K_values( double t,
     if ( t > history_[ i ].t_ )
     {
       triplet_K_value = ( history_[ i ].triplet_Kminus_
-        * std::exp( ( history_[ i ].t_ - t ) / tau_minus_triplet_ ) );
+        * std::exp( ( history_[ i ].t_ - t ) * tau_minus_triplet_inv_ ) );
       K_value = ( history_[ i ].Kminus_
-        * std::exp( ( history_[ i ].t_ - t ) / tau_minus_ ) );
+        * std::exp( ( history_[ i ].t_ - t ) * tau_minus_inv_ ) );
       return;
     }
     i--;
@@ -210,18 +214,18 @@ nest::Archiving_Node::get_history( double t1,
   }
   else
   {
-    std::deque< histentry >::reverse_iterator runner = history_.rbegin();
-    while ( ( runner != history_.rend() ) && ( runner->t_ > t1 ) )
-      ++runner;
-    *start = runner.base();
-
-    std::deque< histentry >::iterator forward_runner = runner.base(); 
-    while ( ( forward_runner != history_.end() ) && ( forward_runner->t_ <= t2 ) )
+    std::deque< histentry >::iterator runner = history_.begin();
+    while ( ( runner != history_.end() ) && ( runner->t_ <= t1 ) )
     {
-      ( forward_runner->access_counter_ )++;
-      ++forward_runner;
+      ++runner;
     }
-    *finish = forward_runner;
+    *start = runner;
+    while ( ( runner != history_.end() ) && ( runner->t_ <= t2 ) )
+    {
+      ( runner->access_counter_ )++;
+      ++runner;
+    }
+    *finish = runner;
   }
 }
 
@@ -243,13 +247,15 @@ nest::Archiving_Node::set_spiketime( Time const& t_sp, double offset )
         history_.pop_front();
       }
       else
+      {
         break;
+      }
     }
     // update spiking history
     Kminus_ =
-      Kminus_ * std::exp( ( last_spike_ - t_sp_ms ) / tau_minus_ ) + 1.0;
+      Kminus_ * std::exp( ( last_spike_ - t_sp_ms ) * tau_minus_inv_ ) + 1.0;
     triplet_Kminus_ = triplet_Kminus_
-        * std::exp( ( last_spike_ - t_sp_ms ) / tau_minus_triplet_ )
+        * std::exp( ( last_spike_ - t_sp_ms ) * tau_minus_triplet_inv_ )
       + 1.0;
     
 
@@ -334,6 +340,8 @@ nest::Archiving_Node::set_status( const DictionaryDatum& d )
   tau_rate_long_ = new_tau_rate_long;
   firing_rate_short_ = new_firing_rate_short;
   firing_rate_long_ = new_firing_rate_long;
+  tau_minus_inv_ = 1. / tau_minus_;
+  tau_minus_triplet_inv_ = 1. / tau_minus_triplet_;
 
   if ( new_tau_Ca <= 0.0 )
   {

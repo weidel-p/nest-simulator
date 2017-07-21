@@ -24,7 +24,10 @@ set( models_sources
     aeif_cond_alpha_multisynapse.h aeif_cond_alpha_multisynapse.cpp
     aeif_cond_beta_multisynapse.h aeif_cond_beta_multisynapse.cpp
     aeif_cond_exp.h aeif_cond_exp.cpp
+    aeif_psc_alpha.h aeif_psc_alpha.cpp
+    aeif_psc_exp.h aeif_psc_exp.cpp
     amat2_psc_exp.h amat2_psc_exp.cpp
+    bernoulli_connection.h
     binary_neuron.h binary_neuron_impl.h
     cont_delay_connection.h cont_delay_connection_impl.h
     correlation_detector.h correlation_detector.cpp
@@ -33,6 +36,10 @@ set( models_sources
     dc_generator.h dc_generator.cpp
     gamma_sup_generator.h gamma_sup_generator.cpp
     gap_junction.h
+    gif_psc_exp.h gif_psc_exp.cpp
+    gif_psc_exp_multisynapse.h gif_psc_exp_multisynapse.cpp
+    gif_cond_exp.h gif_cond_exp.cpp
+    gif_cond_exp_multisynapse.h gif_cond_exp_multisynapse.cpp
     ginzburg_neuron.h ginzburg_neuron.cpp
     hh_cond_exp_traub.h hh_cond_exp_traub.cpp
     hh_psc_alpha.h hh_psc_alpha.cpp
