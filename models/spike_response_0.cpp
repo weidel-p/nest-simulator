@@ -269,7 +269,11 @@ nest::spike_response_0::update( const Time& origin, const long from, const long 
     S_.i_syn_ex_ += V_.weighted_spikes_ex_;
     S_.i_syn_in_ += V_.weighted_spikes_in_;
 
-    double rate = P_.rho0_ * std::exp( (S_.V_m_ - P_.theta_) / P_.du_ );
+    //double rate = P_.rho0_ * std::exp( (S_.V_m_ - P_.theta_) / P_.du_ );
+    double rate = P_.rho0_ + (S_.V_m_ - P_.theta_) / P_.du_ ;
+
+    if (rate < 0)
+        rate = 0.;
 
     // rate_ is in Hz, dt in ms, so we have to convert from s to ms
     V_.poisson_dev_.set_lambda(

@@ -477,7 +477,7 @@ StateSeparationConnection< targetidentifierT >::process_next_(
 
  // update all traces to  t0
  double Kminus_short = target->get_firing_rate_short( t0 );
- double Kminus_long = target->get_firing_rate_long( t0 );
+//double Kminus_long = target->get_firing_rate_long( t0 );
 
 
   double n_diff = n_ - cp.n_threshold_;
@@ -491,13 +491,14 @@ StateSeparationConnection< targetidentifierT >::process_next_(
       dw = cp.A_ * Kplus_short_* n_diff;
   }
 
+  weight_ += dw;
 
-  if (dw > 0){
-      weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  }
-  else{
-      weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  }
+  //if (dw > 0){
+  //    weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  //}
+  //else{
+  //    weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  //}
 
 
  if ( weight_ > cp.Wmax_ ){
@@ -509,7 +510,7 @@ StateSeparationConnection< targetidentifierT >::process_next_(
 
  // propagate Kplus_, Kminus_, n_ to t1 
  Kplus_short_ *= std::exp( ( t0 - t1 ) / cp.tau_short_ );
- Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
+ //Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
 
 
  n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
@@ -596,21 +597,21 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
 
  double Kminus_short = target->get_firing_rate_short( t_spike );
- double Kminus_long = target->get_firing_rate_long( t_spike );
+ //double Kminus_long = target->get_firing_rate_long( t_spike );
 
  e.set_receiver( *target );
  e.set_weight( weight_ );
  e.set_delay( get_delay_steps() );
  e.set_rport( get_rport() );
  e.set_Kplus_short( Kplus_short_ );
- e.set_Kplus_long( Kplus_long_ );
+ e.set_Kplus_long( Kplus_short_ ); //TODO fix
  e.set_Kminus_short( Kminus_short );
- e.set_Kminus_long( Kminus_long );
+ e.set_Kminus_long( Kminus_short ); //TODO fix
  e.set_dopa( n_ );
  e();
 
  Kplus_short_ += 1./cp.tau_short_;
- Kplus_long_ += 1./cp.tau_long_;
+ //Kplus_long_ += 1./cp.tau_long_;
  t_last_update_ = t_spike;
 }
 

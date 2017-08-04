@@ -486,12 +486,14 @@ StateReadoutConnection< targetidentifierT >::process_next_(
   double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
                      copysign(std::pow(n_diff, 2), n_diff) * (t1 - t0); 
 
-  if (dw > 0){
-      weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  }
-  else{
-      weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  }
+  //if (dw > 0){
+  //    weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  //}
+  //else{
+  //    weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
+  //}
+  
+  weight_ += dw;
 
   if ( weight_ > cp.Wmax_ ){
     weight_ = cp.Wmax_;
