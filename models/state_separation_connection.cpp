@@ -48,7 +48,6 @@ StateSeparationCommonProperties::StateSeparationCommonProperties()
   , n_threshold_( 2.0 )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
-  , LTD_scaling_( 1.0 )
 {
 }
 
@@ -70,7 +69,6 @@ StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, "n_threshold", n_threshold_ );
   def< double >( d, "Wmin", Wmin_ );
   def< double >( d, "Wmax", Wmax_ );
-  def< double >( d, "LTD_scaling", LTD_scaling_ );
 }
 
 void
@@ -97,7 +95,6 @@ StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, "n_threshold", n_threshold_ );
   updateValue< double >( d, "Wmin", Wmin_ );
   updateValue< double >( d, "Wmax", Wmax_ );
-  updateValue< double >( d, "LTD_scaling", LTD_scaling_);
 }
 
 Node*
