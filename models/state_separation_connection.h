@@ -257,6 +257,7 @@ public:
  double n_threshold_;
  double Wmin_;
  double Wmax_;
+ double LTD_scaling_;
 };
 
 inline long
@@ -491,7 +492,12 @@ StateSeparationConnection< targetidentifierT >::process_next_(
       dw = cp.A_ * Kplus_short_* n_diff;
   }
 
-  weight_ += dw;
+  if (dw > 0){
+      weight_ += dw;
+  }
+  else{
+      weight_ += dw * cp.LTD_scaling_;
+  }
 
   //if (dw > 0){
   //    weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
