@@ -50,6 +50,7 @@ StateSeparationCommonProperties::StateSeparationCommonProperties()
   , Wmax_( 200.0 )
   , LTD_scaling_( 1.0 )
   , tau_decay_( 0.0 )
+  , weight0_( 1.0 )
 {
 }
 
@@ -73,6 +74,7 @@ StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, "Wmax", Wmax_ );
   def< double >( d, "LTD_scaling", LTD_scaling_ );
   def< double >( d, "tau_decay", tau_decay_);
+  def< double >( d, "weight0", weight0_);
 }
 
 void
@@ -101,6 +103,7 @@ StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, "Wmax", Wmax_ );
   updateValue< double >( d, "LTD_scaling", LTD_scaling_);
   updateValue< double >( d, "tau_decay", tau_decay_);
+  updateValue< double >( d, "weight0", weight0_);
 }
 
 Node*
