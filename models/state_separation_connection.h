@@ -258,6 +258,7 @@ public:
  double Wmin_;
  double Wmax_;
  double LTD_scaling_;
+ double tau_decay_;
 };
 
 inline long
@@ -471,19 +472,32 @@ StateSeparationConnection< targetidentifierT >::process_next_(
  double t1,
  const StateSeparationCommonProperties& cp )
 {
- //std::cout << t0 << " " << t1 << std::endl;
+  //std::cout << t0 << " " << t1 << std::endl;
 
- assert(t1 >= t0);
- Node* target = get_target( t );
+  assert(t1 >= t0);
+  Node* target = get_target( t );
 
- // update all traces to  t0
- double Kminus_short = target->get_firing_rate_short( t0 );
-//double Kminus_long = target->get_firing_rate_long( t0 );
+  // update all traces to  t0
+  double Kminus_short = target->get_firing_rate_short( t0 );
+  //double Kminus_long = target->get_firing_rate_long( t0 );
+
+
+  // calculate decay before weight update
+  if (cp.tau_decay_ > 0.){
+    weight_ *= std::exp( (t0 - t1) / cp.tau_decay_ );
+
+    if ( weight_ > cp.Wmax_ ){
+      weight_ = cp.Wmax_;
+    }
+    if ( weight_ < cp.Wmin_){
+      weight_ = cp.Wmin_;
+    }
+  }
 
 
   double n_diff = n_ - cp.n_threshold_;
 
-  // update weight with forward euler
+  // update weight 
   //double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
