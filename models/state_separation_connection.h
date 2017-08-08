@@ -485,13 +485,17 @@ StateSeparationConnection< targetidentifierT >::process_next_(
 
   // calculate decay before weight update
   if (cp.tau_decay_ > 0.){
-    weight_ -= (weight_ - cp.weight0_) * std::exp( (t0 - t1) / cp.tau_decay_ );
+    if (weight_ > weight0_) {
+        weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
 
-    if ( weight_ > cp.Wmax_ ){
-      weight_ = cp.Wmax_;
+        if (weight_ < weight0_)
+            weight_ = weight0_;
     }
-    if ( weight_ < cp.Wmin_){
-      weight_ = cp.Wmin_;
+    else{
+        weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
+
+        if (weight_ > weight0_)
+            weight_ = weight0_;
     }
   }
 
