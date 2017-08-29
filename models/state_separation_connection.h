@@ -250,8 +250,7 @@ public:
 
  volume_transmitter* vt_;
  double A_;
- double tau_short_;
- double tau_long_;
+ double tau_;
  double tau_n_;
  double b_;
  double n_threshold_;
@@ -393,8 +392,7 @@ private:
 
  // data members of each connection
  double weight_;
- double Kplus_short_;
- double Kplus_long_;
+ double Kplus_;
  double n_;
 
 
@@ -412,8 +410,7 @@ template < typename targetidentifierT >
 StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
  : ConnectionBase()
  , weight_( 1.0 )
- , Kplus_short_( 0.0 )
- , Kplus_long_( 0.0 )
+ , Kplus_( 0.0 )
  , n_( 0.0 )
  , dopa_spikes_idx_( 0 )
  , t_last_update_( 0.0 )
@@ -425,8 +422,7 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
  const StateSeparationConnection& rhs )
  : ConnectionBase( rhs )
  , weight_( rhs.weight_ )
- , Kplus_short_( rhs.Kplus_short_ )
- , Kplus_long_( rhs.Kplus_long_ )
+ , Kplus_( rhs.Kplus_ )
  , n_( rhs.n_ )
  , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
  , t_last_update_( rhs.t_last_update_ )
@@ -444,8 +440,7 @@ StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d )
 
  // own properties, different for individual synapse
  def< double >( d, "n", n_ );
- def< double >( d, "Kplus_short", Kplus_short_ );
- def< double >( d, "Kplus_long", Kplus_long_ );
+ def< double >( d, "Kplus", Kplus_ );
 }
 
 template < typename targetidentifierT >
@@ -458,8 +453,7 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
  updateValue< double >( d, names::weight, weight_ );
 
  updateValue< double >( d, "n", n_ );
- updateValue< double >( d, "Kplus_short", Kplus_short_ );
- updateValue< double >( d, "Kplus_long", Kplus_long_ );
+ updateValue< double >( d, "Kplus", Kplus_ );
 }
 
 
@@ -479,8 +473,7 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   Node* target = get_target( t );
 
   // update all traces to  t0
-  double Kminus_short = target->get_firing_rate_short( t0 );
-  //double Kminus_long = target->get_firing_rate_long( t0 );
+  double Kminus = target->get_firing_rate( t0 );
 
 
   // calculate decay before weight update
@@ -503,12 +496,12 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   double n_diff = n_ - cp.n_threshold_;
 
   // update weight 
-  //double dw = cp.A_ * (Kplus_short_ * Kminus_short - Kplus_long_ * Kminus_long) * 
+  //double dw = cp.A_ * (Kplus_ * Kminus - Kplus_long_ * Kminus_long) * 
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-  //if (Kminus_short > cp.b_){
-      dw = cp.A_ * Kplus_short_* n_diff * Kminus_short;
+  //if (Kminus > cp.b_){
+      dw = cp.A_ * Kplus_* n_diff * Kminus;
   //}
 
   if (dw > 0){
@@ -534,8 +527,7 @@ StateSeparationConnection< targetidentifierT >::process_next_(
  }
 
  // propagate Kplus_, Kminus_, n_ to t1 
- Kplus_short_ *= std::exp( ( t0 - t1 ) / cp.tau_short_ );
- //Kplus_long_ *= std::exp( ( t0 - t1 ) / cp.tau_long_ );
+ Kplus_ *= std::exp( ( t0 - t1 ) / cp.tau_ );
 
 
  n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
@@ -621,22 +613,18 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
 
 
- double Kminus_short = target->get_firing_rate_short( t_spike );
- //double Kminus_long = target->get_firing_rate_long( t_spike );
+ double Kminus = target->get_firing_rate( t_spike );
 
  e.set_receiver( *target );
  e.set_weight( weight_ );
  e.set_delay( get_delay_steps() );
  e.set_rport( get_rport() );
- e.set_Kplus_short( Kplus_short_ );
- e.set_Kplus_long( Kplus_short_ ); //TODO fix
- e.set_Kminus_short( Kminus_short );
- e.set_Kminus_long( Kminus_short ); //TODO fix
+ e.set_Kplus( Kplus_ );
+ e.set_Kminus( Kminus );
  e.set_dopa( n_ );
  e();
 
- Kplus_short_ += 1./cp.tau_short_;
- //Kplus_long_ += 1./cp.tau_long_;
+ Kplus_ += 1./cp.tau_;
  t_last_update_ = t_spike;
 }
 

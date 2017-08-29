@@ -781,8 +781,7 @@ public:
     buffers_initialized_ = initialized;
   }
 
-  virtual double get_firing_rate_short( double t );
-  virtual double get_firing_rate_long( double t );
+  virtual double get_firing_rate( double t );
 
   /**
    * Return the number of thread siblings in SiblingContainer.

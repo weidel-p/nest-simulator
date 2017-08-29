@@ -361,16 +361,8 @@ Node::get_K_value( double )
 }
 
 double
-Node::get_firing_rate_short( double )
+Node::get_firing_rate( double )
 {
-    std::cout << " AAAAAAAAAAAAAAA " << std::endl;
-  throw UnexpectedEvent();
-}
-
-double
-Node::get_firing_rate_long( double )
-{
-    std::cout << " BBBBBAAAAAAAAAA " << std::endl;
   throw UnexpectedEvent();
 }
 
