@@ -500,9 +500,9 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-  //if (Kminus > cp.b_){
+  if (Kminus > cp.b_){
       dw = cp.A_ * Kplus_* n_diff * Kminus;
-  //}
+  }
 
   if (dw > 0){
       weight_ += dw;
