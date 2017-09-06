@@ -495,6 +495,13 @@ StateSeparationConnection< targetidentifierT >::process_next_(
 
   double n_diff = n_ - cp.n_threshold_;
 
+  if (n_diff > 0){
+      n_diff = n_diff * n_diff;
+  }
+  else{
+      n_diff = - n_diff * n_diff;
+  }
+
   // update weight 
   //double dw = cp.A_ * (Kplus_ * Kminus - Kplus_long_ * Kminus_long) * 
   //                    std::pow(n_diff, 2) * (t1 - t0); 
