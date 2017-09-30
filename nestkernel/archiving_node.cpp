@@ -193,7 +193,13 @@ nest::Archiving_Node::get_history( double t1,
     std::deque< histentry >::iterator runner = history_.begin();
     while ( ( runner != history_.end() ) && ( runner->t_ <= t1 ) )
     {
-      ++runner;
+      if (runner->access_counter_ >= n_incoming_)
+      {
+        runner = history_.erase(runner);
+      }
+      else{
+        ++runner;
+      }
     }
     *start = runner;
     while ( ( runner != history_.end() ) && ( runner->t_ <= t2 ) )
@@ -203,6 +209,8 @@ nest::Archiving_Node::get_history( double t1,
     }
     *finish = runner;
   }
+
+  
 }
 
 void
