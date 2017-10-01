@@ -252,7 +252,8 @@ public:
  double A_;
  double tau_;
  double tau_n_;
- double b_;
+ double b_plus_;
+ double b_minus_;
  double n_threshold_;
  double Wmin_;
  double Wmax_;
@@ -507,8 +508,8 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-  if (Kminus > cp.b_){
-      dw = cp.A_ * Kplus_* n_diff * Kminus;
+  if (Kminus > cp.b_minus_ and Kplus_ > cp.b_plus_ ){
+      dw = cp.A_ * Kplus_ * n_diff * Kminus;
   }
 
   if (dw > 0){

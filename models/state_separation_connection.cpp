@@ -43,7 +43,8 @@ StateSeparationCommonProperties::StateSeparationCommonProperties()
   , A_( 0.1 )
   , tau_( 100.0 )
   , tau_n_( 20.0 )
-  , b_( 0.0 )
+  , b_plus_( 0.0 )
+  , b_minus_( 0.0 )
   , n_threshold_( 2.0 )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
@@ -66,7 +67,8 @@ StateSeparationCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, "A", A_);
   def< double >( d, "tau", tau_ );
   def< double >( d, "tau_n", tau_n_ );
-  def< double >( d, "b", b_ );
+  def< double >( d, "b_plus", b_plus_ );
+  def< double >( d, "b_minus", b_minus_ );
   def< double >( d, "n_threshold", n_threshold_ );
   def< double >( d, "Wmin", Wmin_ );
   def< double >( d, "Wmax", Wmax_ );
@@ -94,7 +96,8 @@ StateSeparationCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, "A", A_);
   updateValue< double >( d, "tau", tau_);
   updateValue< double >( d, "tau_n", tau_n_ );
-  updateValue< double >( d, "b", b_ );
+  updateValue< double >( d, "b_plus", b_plus_ );
+  updateValue< double >( d, "b_minus", b_minus_ );
   updateValue< double >( d, "n_threshold", n_threshold_ );
   updateValue< double >( d, "Wmin", Wmin_ );
   updateValue< double >( d, "Wmax", Wmax_ );
