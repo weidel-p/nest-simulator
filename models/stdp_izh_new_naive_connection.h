@@ -1,5 +1,5 @@
 /*
- *  stdp_izh_naive_connection.h
+ *  stdp_izh_new_naive_connection.h
  *
  *  This file is part of NEST.
  *
@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef STDP_IZH_NAIVE_CONNECTION_H
-#define STDP_IZH_NAIVE_CONNECTION_H
+#ifndef STDP_IZH_NEW_NAIVE_CONNECTION_H
+#define STDP_IZH_NEW_NAIVE_CONNECTION_H
 
 /* BeginDocumentation
   Name: stdp_izh_synapse - Synapse type for spike-timing dependent
@@ -65,7 +65,7 @@
 namespace nest
 {
 
-class STDPIzhNaiveConnection : public Connection< TargetIdentifierPtrRport >
+class STDPIzhNewNaiveConnection : public Connection< TargetIdentifierPtrRport >
 {
 
 public:
@@ -76,14 +76,14 @@ public:
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
    */
-  STDPIzhNaiveConnection();
+  STDPIzhNewNaiveConnection();
 
 
   /**
    * Copy constructor.
    * Needs to be defined properly in order for GenericConnector to work.
    */
-  STDPIzhNaiveConnection( const STDPIzhNaiveConnection& );
+  STDPIzhNewNaiveConnection( const STDPIzhNewNaiveConnection& );
 
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -186,7 +186,7 @@ private:
  * \param tid The thread on which this connection is stored.
  */
 inline void
-STDPIzhNaiveConnection::send( Event& e,
+STDPIzhNewNaiveConnection::send( Event& e,
   thread tid,
   double,
   const CommonPropertiesType& )
@@ -212,7 +212,7 @@ STDPIzhNaiveConnection::send( Event& e,
   e.set_weight( static_cast< double >( reinterpret_cast< long >(this) ) );
   // Default multiplicity is 1
   // Use multiplicity -1 to signal to postsynaptic neuron that this
-  // event is delivered through an STDPIzhNaiveConnection
+  // event is delivered through an STDPIzhNewNaiveConnection
   e.set_multiplicity( -1 );
   e.set_delay( get_delay_steps() );
   e.set_rport( get_rport() );
@@ -221,4 +221,4 @@ STDPIzhNaiveConnection::send( Event& e,
 
 } // of namespace nest
 
-#endif // of #ifndef STDP_IZH_NAIVE_CONNECTION_H
+#endif // of #ifndef STDP_IZH_NEW_NAIVE_CONNECTION_H

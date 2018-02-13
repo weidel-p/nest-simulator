@@ -90,6 +90,7 @@ set( models_sources
     stdp_connection_facetshw_hom.h stdp_connection_facetshw_hom_impl.h
     stdp_pl_connection_hom.h stdp_pl_connection_hom.cpp
     stdp_izh_naive_connection.h stdp_izh_naive_connection.cpp
+    stdp_izh_new_naive_connection.h stdp_izh_new_naive_connection.cpp
     stdp_izh_bitwise_correct_connection.h stdp_izh_bitwise_correct_connection.cpp
     stdp_izh_connection.h stdp_izh_connection.cpp
     stdp_triplet_connection.h

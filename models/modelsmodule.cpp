@@ -121,6 +121,7 @@
 #include "stdp_connection_facetshw_hom_impl.h"
 #include "stdp_connection_hom.h"
 #include "stdp_izh_naive_connection.h"
+#include "stdp_izh_new_naive_connection.h"
 #include "stdp_izh_bitwise_correct_connection.h"
 #include "stdp_izh_connection.h"
 #include "stdp_triplet_connection.h"
@@ -458,6 +459,11 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< STDPIzhNaiveConnection >(
       "stdp_izh_naive_synapse" );
+
+  kernel()
+    .model_manager
+    .register_connection_model< STDPIzhNewNaiveConnection >(
+      "stdp_izh_new_naive_synapse" );
 
   kernel()
     .model_manager
