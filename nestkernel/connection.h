@@ -235,6 +235,13 @@ public:
     const double,
     const CommonSynapseProperties& );
 
+  void trigger_update_weight( const thread,
+    const double,
+    const double,
+    const CommonSynapseProperties& );
+
+
+
   Node*
   get_target( thread t ) const
   {
@@ -350,6 +357,20 @@ Connection< targetidentifierT >::calibrate( const TimeConverter& tc )
     syn_id_delay_.delay = 1;
   }
 }
+
+template < typename targetidentifierT >
+inline void
+Connection< targetidentifierT >::trigger_update_weight( const thread,
+  const double,
+  const double,
+  const CommonSynapseProperties& )
+{
+  throw IllegalConnection(
+    "Connection::trigger_update_weight: "
+    "Connection does not support updates that are triggered by the volume "
+    "transmitter." );
+}
+
 
 template < typename targetidentifierT >
 inline void

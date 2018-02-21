@@ -1,5 +1,5 @@
 /*
-*  state_separation_connection.h
+*  dopa_connection.h
 *
 *  This file is part of NEST.
 *
@@ -20,8 +20,8 @@
 *
 */
 
-#ifndef STATE_SEPARATION_H
-#define STATE_SEPARATION_H
+#ifndef DOPA_CONNECTION_H
+#define DOPA_CONNECTION_H
 
 /* BeginDocumentation
 
@@ -89,119 +89,6 @@
   SeeAlso: volume_transmitter
 */
 
-/* 
-* Needed quantities:
-* Presynaptic activity: Kplus_
-* Postsynaptic activity: Kminus_ (computed in target neuron)
-* dopamine concentration: n_
-* synaptic weight: weight_
-* last update: t_last_update_
-*
-* Assume:
-* Kplus_ and n_ and weight_ are already updated to t_last_update_ 
-* There was no presynaptic spike between t_last_update_ and the current update step
-* 
-* 
-* Pseudocode
-*
-* function send():
-*     t_now = time of current presynaptic spike
-*     dopa_spikes = get all dopamine spike from the volume transmitter
-*     process_dopa_spikes()
-*     e()
-*
-*
-* function trigger_update_weight(dopa_spikes):
-*     limit dopa spikes to first dopa spike later than t_last_update_
-*     process_dopa_spikes() 
-* 
-*
-* function process_dopa_spikes():
-*     for t_dopa in [dopa_spikes, t_now]:
-*         post_spikes = target->getHistory(t_last_update_, t_dopa)
-*         for t_s in [post_spikes, t_dopa]:
-*             Kminus_ = get Kminus_ at time t_last_update_
-*
-*             needed_t0 = check_if_update_weight_needed() 
-*             propagate Kplus_, Kminus_, n_ to t_s in temporary variables 
-*             needed_t1 = check_if_update_weight_needed() 
-*
-*             if needed_t0 == "facilitate":
-*                  t_update_until = calc_update_needed_until(t_s)
-*                  facilitate(t_last_update_, t_update_until)
-*             if needed_t0 == "no update needed" and needed_t1 == "facilitate":
-*                  t_update_from = calc_update_needed_from(t_s)
-*                  facilitate(t_update_from, t_s)
-*             
-*             if needed_t0 == "depress":
-*                  t_update_until = calc_update_needed_until(t_s)
-*                  depress(t_last_update_, t_update_until)
-*             if needed_t0 == "no update needed" and needed_t1 == "depress":
-*                  t_update_from = calc_update_needed_from(t_s)
-*                  depress(t_update_from, t_s)
-*             if needed_t0 == "facilitate" and needed_t1 == "depress":
-*                  t_update_until = calc_update_needed_until(t_s)
-*                  facilitate(t_last_update_, t_update_until)
-*                  t_update_from = calc_update_needed_from(t_s)
-*                  depress(t_update_from, t_s)
-*            
-*
-*             
-*             t_last_update_ = t_s
-*             update Kplus_, n_ according to temporary values
-*             n_ += 1
-*             Kplus += 1
-*
-*
-*
-* 
-* function check_if_update_weight_needed():
-*         if n_ > n_upper_threshold:
-*             if Kminus_ > Kminus_threshold and Kplus > Kplus_threshold:
-*                 return "facilitate"
-*             else:
-*                 return "no update needed"
-*         if n < n_lower_threshold:
-*             if Kminus_ > Kminus_threshold and Kplus > Kplus_threshold:
-*                 return "depress"
-*             else:
-*                 return "no update needed"
-*
-*
-* function facilitate(t0, t1):
-*     dt = t1 - t0
-*     // additive rule
-*     weight_ += A * Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
-*
-*
-* function depress(t0, t1):
-*     dt = t1 - t0
-*     // additive rule
-*     weight_ -= A *  Kminus_ * Kplus_ / -(1/tau_minus + 1/tau_plus) * (np.exp(-dt/tau_minus) * np.exp(-dt/tau_plus) - 1)
-*
-*
-*
-* function calc_update_needed_from(t1)
-*     t_threshold_cross_n = -tau_n * ln(n_lower_threshold / n_)
-*     return min(t_threshold_cross_n, t1)
-*
-*
-*
-* function calc_update_needed_until(t1)
-*     t_threshold_cross_K_minus = -tau_minus * ln(Kminus_threshold / Kminus)
-*     t_threshold_cross_K_plus = -tau_plus * ln(Kplus_threshold / Kplus)
-*     if n_ > n_upper_threshold:
-*         t_threshold_cross_n = -tau_n * ln(n_upper_threshold / n_)
-*     else:
-*         t_threshold_cross_n = t1 
-*
-*     return min(t_threshold_cross_K_minus, t_threshold_cross_K_plus, t_threshold_cross_n, t1)
-*     
-*         
-*
-*
-*/
-
 
 
 
@@ -209,7 +96,7 @@
 #include "numerics.h"
 
 // Includes from models:
-#include "volume_transmitter.h"
+#include "global_volume_transmitter.h"
 
 // Includes from nestkernel:
 #include "connection.h"
@@ -225,14 +112,14 @@ namespace nest
 * Class containing the common properties for all synapses of type dopamine
 * connection.
 */
-class StateSeparationCommonProperties : public CommonSynapseProperties
+class DopaCommonProperties : public CommonSynapseProperties
 {
 public:
  /**
   * Default constructor.
   * Sets all property values to defaults.
   */
- StateSeparationCommonProperties();
+ DopaCommonProperties();
 
  /**
   * Get all properties and put them into a dictionary.
@@ -248,7 +135,7 @@ public:
 
  long get_vt_gid() const;
 
- volume_transmitter* vt_;
+ global_volume_transmitter* vt_;
  double A_;
  double tau_;
  double tau_n_;
@@ -263,7 +150,7 @@ public:
 };
 
 inline long
-StateSeparationCommonProperties::get_vt_gid() const
+DopaCommonProperties::get_vt_gid() const
 {
  if ( vt_ != 0 )
    return vt_->get_gid();
@@ -272,28 +159,28 @@ StateSeparationCommonProperties::get_vt_gid() const
 }
 
 /**
-* Class representing an StateSeparationConnection with homogeneous parameters,
+* Class representing an DopaConnection with homogeneous parameters,
 * i.e. parameters are the same for all synapses.
 */
 template < typename targetidentifierT >
-class StateSeparationConnection : public Connection< targetidentifierT >
+class DopaConnection : public Connection< targetidentifierT >
 {
 
 public:
- typedef StateSeparationCommonProperties CommonPropertiesType;
+ typedef DopaCommonProperties CommonPropertiesType;
  typedef Connection< targetidentifierT > ConnectionBase;
 
  /**
   * Default Constructor.
   * Sets default values for all parameters. Needed by GenericConnectorModel.
   */
- StateSeparationConnection();
+ DopaConnection();
 
  /**
   * Copy constructor from a property object.
   * Needs to be defined properly in order for GenericConnector to work.
   */
- StateSeparationConnection( const StateSeparationConnection& );
+ DopaConnection( const DopaConnection& );
 
  // Explicitly declare all methods inherited from the dependent base
  // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -318,19 +205,19 @@ public:
   * Send an event to the receiver of this connection.
   * \param e The event to send
   */
- void send( Event& e, thread t, double_t, const StateSeparationCommonProperties& cp );
+ void send( Event& e, thread t, double_t, const DopaCommonProperties& cp );
 
  void trigger_update_weight( thread t,
    const double trace,
    double t_trig,
-   const StateSeparationCommonProperties& cp ) {};
+   const DopaCommonProperties& cp );
 
 
 
  void trigger_update_weight( thread t,
    const std::vector< spikecounter >& dopa_spikes,
    double t_trig,
-   const StateSeparationCommonProperties& cp );
+   const DopaCommonProperties& cp ) {};
 
  class ConnTestDummyNode : public ConnTestDummyNodeBase
  {
@@ -385,17 +272,11 @@ public:
  }
 
 private:
- void process_dopa_spikes_(
-   thread t,
-   double t1,
-   const std::vector< spikecounter >& dopa_spikes,
-   const StateSeparationCommonProperties& cp);
-
  void process_next_(
    thread t,
    double t0,
    double t1,
-   const StateSeparationCommonProperties& cp );
+   const DopaCommonProperties& cp );
 
 
  // data members of each connection
@@ -411,11 +292,11 @@ private:
 };
 
 //
-// Implementation of class StateSeparationConnection.
+// Implementation of class DopaConnection.
 //
 
 template < typename targetidentifierT >
-StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
+DopaConnection< targetidentifierT >::DopaConnection()
  : ConnectionBase()
  , weight_( 1.0 )
  , Kplus_( 0.0 )
@@ -426,8 +307,8 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection()
 }
 
 template < typename targetidentifierT >
-StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
- const StateSeparationConnection& rhs )
+DopaConnection< targetidentifierT >::DopaConnection(
+ const DopaConnection& rhs )
  : ConnectionBase( rhs )
  , weight_( rhs.weight_ )
  , Kplus_( rhs.Kplus_ )
@@ -439,7 +320,7 @@ StateSeparationConnection< targetidentifierT >::StateSeparationConnection(
 
 template < typename targetidentifierT >
 void
-StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
+DopaConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
 
  // base class properties, different for individual synapse
@@ -453,7 +334,7 @@ StateSeparationConnection< targetidentifierT >::get_status( DictionaryDatum& d )
 
 template < typename targetidentifierT >
 void
-StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
+DopaConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
  ConnectorModel& cm )
 {
  // base class properties
@@ -469,11 +350,11 @@ StateSeparationConnection< targetidentifierT >::set_status( const DictionaryDatu
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::process_next_(
+DopaConnection< targetidentifierT >::process_next_(
  thread t,
  double t0,
  double t1,
- const StateSeparationCommonProperties& cp )
+ const DopaCommonProperties& cp )
 {
   //std::cout << t0 << " " << t1 << std::endl;
 
@@ -515,8 +396,8 @@ StateSeparationConnection< targetidentifierT >::process_next_(
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-  if (Kminus > cp.b_minus_ and Kplus_ > cp.b_plus_ ){
-      dw = cp.A_ * Kplus_ * n_diff * Kminus;
+  if (Kminus > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
+      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus;
   }
 
   if (dw > 0){
@@ -545,55 +426,10 @@ StateSeparationConnection< targetidentifierT >::process_next_(
  Kplus_ *= std::exp( ( t0 - t1 ) / cp.tau_ );
 
 
- n_ = n_ * std::exp( ( t0 - t1) / cp.tau_n_ );
 
 }
 
 
-
-template < typename targetidentifierT >
-inline void
-StateSeparationConnection< targetidentifierT >::process_dopa_spikes_(
- thread t,
- double t1,
- const std::vector< spikecounter >& dopa_spikes,
- const StateSeparationCommonProperties& cp )
-{
-
- Node* target = get_target( t );
-
-
- std::deque< histentry >::iterator start;
- std::deque< histentry >::iterator finish;
-
- for(std::vector< spikecounter >::const_iterator it = dopa_spikes.begin(); it != dopa_spikes.end(); ++it) {
-   if (it->spike_time_ <= t_last_update_ or it->spike_time_ > t1)
-       continue;
- 
-   // get history of postsynaptic neuron
-   target->get_history( t_last_update_,
-   it->spike_time_,
-   &start,
-   &finish );
-   while ( start != finish )
-   {
-       //std::cout << "process post spike " << n_ << std::endl;
-      process_next_(t, t_last_update_, start->t_, cp);
-
-      t_last_update_ = start->t_;
-      ++start;
-
-   }
-   
-   process_next_(t, t_last_update_, it->spike_time_, cp);
-   n_ += it->multiplicity_ / cp.tau_n_; 
-   // std::cout << "process dopa spike " << n_ << std::endl;
-   t_last_update_ = it->spike_time_;
- }
-
-
-
-}
 
 /**
 * Send an event to the receiver of this connection.
@@ -603,10 +439,10 @@ StateSeparationConnection< targetidentifierT >::process_dopa_spikes_(
 */
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::send( Event& e,
+DopaConnection< targetidentifierT >::send( Event& e,
  thread t,
  double_t,
- const StateSeparationCommonProperties& cp )
+ const DopaCommonProperties& cp )
 {
 
  Node* target = get_target( t );
@@ -614,21 +450,9 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
  double t_spike = e.get_stamp().get_ms();
 
-
- // get history of dopamine spikes
- const std::vector< spikecounter >& dopa_spikes = cp.vt_->deliver_spikes();
-
- process_dopa_spikes_(t, t_spike,  dopa_spikes, cp);
-
- if (t_spike > t_last_update_){
- //    std::cout << "ERRER " << t_last_update_ << " " << t_spike << std::endl;
-     process_next_(t, t_last_update_, t_spike, cp);
-     t_last_update_ = t_spike;
- }
-
-
-
  double Kminus = target->get_firing_rate( t_spike );
+
+ process_next_(t, t_last_update_, t_spike, cp);
 
  e.set_receiver( *target );
  e.set_weight( weight_ );
@@ -645,15 +469,13 @@ StateSeparationConnection< targetidentifierT >::send( Event& e,
 
 template < typename targetidentifierT >
 inline void
-StateSeparationConnection< targetidentifierT >::trigger_update_weight( thread t,
- const std::vector< spikecounter >& dopa_spikes,
+DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
+ const double trace,
  const double t_trig,
- const StateSeparationCommonProperties& cp )
+ const DopaCommonProperties& cp )
 {
+    n_ = trace;
 
- process_dopa_spikes_(t, t_trig, dopa_spikes, cp);
- process_next_(t, t_last_update_, t_trig, cp);
- t_last_update_ = t_trig;
 
 
 }
@@ -664,4 +486,4 @@ StateSeparationConnection< targetidentifierT >::trigger_update_weight( thread t,
 
 } // of namespace nest
 
-#endif // of #ifndef STATE_SEPARATION_H
+#endif // of #ifndef DOPA_CONNECTION_H

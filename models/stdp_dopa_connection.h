@@ -212,6 +212,13 @@ public:
   void send( Event& e, thread t, double, const STDPDopaCommonProperties& cp );
 
   void trigger_update_weight( thread t,
+    const double trace,
+    double t_trig,
+    const STDPDopaCommonProperties& cp ) {};
+
+
+
+  void trigger_update_weight( thread t,
     const std::vector< spikecounter >& dopa_spikes,
     double t_trig,
     const STDPDopaCommonProperties& cp );

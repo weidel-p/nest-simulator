@@ -105,6 +105,7 @@
 #include "weight_recorder.h"
 
 #include "volume_transmitter.h"
+#include "global_volume_transmitter.h"
 
 // Prototypes for synapses
 #include "bernoulli_connection.h"
@@ -125,6 +126,7 @@
 #include "stdp_triplet_connection.h"
 #include "stdp_dopa_connection.h"
 #include "state_separation_connection.h"
+#include "dopa_connection.h"
 #include "stdp_pl_connection_hom.h"
 #include "tsodyks2_connection.h"
 #include "tsodyks_connection.h"
@@ -248,6 +250,8 @@ ModelsModule::init( SLIInterpreter* )
     "correlospinmatrix_detector" );
   kernel().model_manager.register_node_model< volume_transmitter >(
     "volume_transmitter" );
+  kernel().model_manager.register_node_model< global_volume_transmitter >(
+    "global_volume_transmitter" );
 
   kernel().model_manager.register_node_model< spike_response_0 >( "SRM0" );
 
@@ -604,6 +608,22 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< STDPDopaConnection< TargetIdentifierIndex > >(
       "stdp_dopamine_synapse_hpc" );
+
+  /* BeginDocumentation
+     Name: state_separation_synapse_hpc - Variant of state_separation_synapse with low
+     memory consumption.
+     SeeAlso: synapsedict, state_separation_synapse, static_synapse_hpc
+  */
+  kernel()
+    .model_manager
+    .register_connection_model< DopaConnection< TargetIdentifierPtrRport > >(
+      "dopa_synapse" );
+  kernel()
+    .model_manager
+    .register_connection_model< DopaConnection< TargetIdentifierIndex > >(
+      "dopa_synapse_hpc" );
+
+
 
   /* BeginDocumentation
      Name: state_separation_synapse_hpc - Variant of state_separation_synapse with low

@@ -176,6 +176,12 @@ public:
 
   virtual void trigger_update_weight( long vt_gid,
     thread t,
+    const double trace,
+    double t_trig,
+    const std::vector< ConnectorModel* >& cm ) = 0;
+
+  virtual void trigger_update_weight( long vt_gid,
+    thread t,
     const std::vector< spikecounter >& dopa_spikes,
     double t_trig,
     const std::vector< ConnectorModel* >& cm ) = 0;
@@ -516,6 +522,30 @@ public:
   void
   trigger_update_weight( long vt_gid,
     thread t,
+    const double trace,
+    double t_trig,
+    const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+    for ( size_t i = 0; i < K; i++ )
+    {
+      if ( static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+             ->get_common_properties()
+             .get_vt_gid() == vt_gid )
+      {
+        C_[ i ].trigger_update_weight( t,
+          trace,
+          t_trig,
+          static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+            ->get_common_properties() );
+      }
+    }
+  }
+
+
+  void
+  trigger_update_weight( long vt_gid,
+    thread t,
     const std::vector< spikecounter >& dopa_spikes,
     double t_trig,
     const std::vector< ConnectorModel* >& cm )
@@ -757,6 +787,26 @@ public:
     ConnectorBase::set_t_lastspike( e.get_stamp().get_ms() );
 
     ConnectorBase::send_weight_event( cp, e, t );
+  }
+
+  void
+  trigger_update_weight( long vt_gid,
+    thread t,
+    const double trace,
+    double t_trig,
+    const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+    if ( static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+           ->get_common_properties()
+           .get_vt_gid() == vt_gid )
+    {
+      C_[ 0 ].trigger_update_weight( t,
+        trace,
+        t_trig,
+        static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+          ->get_common_properties() );
+    }
   }
 
   void
@@ -1036,6 +1086,29 @@ public:
   void
   trigger_update_weight( long vt_gid,
     thread t,
+    const double trace,
+    double t_trig,
+    const std::vector< ConnectorModel* >& cm )
+  {
+    synindex syn_id = C_[ 0 ].get_syn_id();
+    for ( size_t i = 0; i < C_.size(); i++ )
+    {
+      if ( static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+             ->get_common_properties()
+             .get_vt_gid() == vt_gid )
+      {
+        C_[ i ].trigger_update_weight( t,
+          trace,
+          t_trig,
+          static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id ] )
+            ->get_common_properties() );
+      }
+    }
+  }
+
+  void
+  trigger_update_weight( long vt_gid,
+    thread t,
     const std::vector< spikecounter >& dopa_spikes,
     double t_trig,
     const std::vector< ConnectorModel* >& cm )
@@ -1213,6 +1286,19 @@ public:
     for ( size_t i = 0; i < primary_end_; i++ )
     {
       at( i )->send( e, t, cm );
+    }
+  }
+
+  void
+  trigger_update_weight( long vt_gid,
+    thread t,
+    const double trace,
+    double t_trig,
+    const std::vector< ConnectorModel* >& cm )
+  {
+    for ( size_t i = 0; i < size(); i++ )
+    {
+      at( i )->trigger_update_weight( vt_gid, t, trace, t_trig, cm );
     }
   }
 

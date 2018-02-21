@@ -979,6 +979,27 @@ nest::ConnectionManager::validate_source_entry_( const thread tid,
 }
 
 // -----------------------------------------------------------------------------
+//
+//
+void
+nest::ConnectionManager::trigger_update_weight( const long vt_id,
+  const double trace,
+  const double t_trig )
+{
+  const index t = kernel().vp_manager.get_thread_id();
+  for ( tSConnector::const_nonempty_iterator it =
+          connections_[ t ].nonempty_begin();
+        it != connections_[ t ].nonempty_end();
+        ++it )
+  {
+    validate_pointer( *it )->trigger_update_weight( vt_id,
+      t,
+      trace,
+      t_trig,
+      kernel().model_manager.get_synapse_prototypes( t ) );
+  }
+}
+
 
 void
 nest::ConnectionManager::trigger_update_weight( const long vt_id,
