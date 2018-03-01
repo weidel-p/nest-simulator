@@ -98,24 +98,9 @@ STDPIzhNewNaiveConnection::set_status( const DictionaryDatum& d, ConnectorModel&
 void
 STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_trig, const CommonPropertiesType& )
 {
-  //std::cout << "before update weight = " << weight_ << std::endl;
 
   Node* target = get_target( tid );
   const std::vector< double >& post_spikes = target->get_post_spikes();
-
-  /* std::cout << "pre_spikes = [ "; */
-  /* for ( std::vector< double >::const_iterator it = pre_spikes_.begin(); it < pre_spikes_.end(); ++it ) */
-  /* { */
-  /*   std::cout << (*it) << ", "; */
-  /* } */
-  /* std::cout << "]" << std::endl; */
-
-  /* std::cout << "post_spikes = [ "; */
-  /* for ( std::vector< double >::const_iterator it = post_spikes.begin(); it < post_spikes.end(); ++it ) */
-  /* { */
-  /*   std::cout << (*it) << ", "; */
-  /* } */
-  /* std::cout << "]" << std::endl; */
 
   index i = 1; // index to iterate over post_spikes
   index j = 1; // index to iterate over pre_spikes_
@@ -129,25 +114,20 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
     {
       // facilitation (also for t_pre_spike == t_post_spike)
       wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] - 2 ) / tau_plus_ );
-      //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
       K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i]  - 1 ) / tau_minus_ ) + 1.0;
       ++i;
     }
     
     // depression (also for t_pre_spike == t_post_spike)
     wdev_ -= alpha_ * lambda_ * K_minus_ * std::exp( ( post_spikes[i-1] - pre_spikes_[j] - 1 )  / tau_minus_);
-    //std::cout << "depression t_last_post = " << post_spikes[i-1] << ", t_pre = " << pre_spikes_[j] << ", wdev = " << wdev_ << std::endl;
     K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j]  - 1 ) / tau_plus_ ) + 1.0;
   }
-  
-  //std::cout << "no more pre_spikes in update interval" << std::endl;
   
   // process remaining postsynaptic spikes in this update interval if there are any
   while ( i < post_spikes.size() && post_spikes[i] < t_trig )
   {
     // facilitation
     wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i]  - 2 ) / tau_plus_ );
-    //std::cout << "facilitation t_last_pre = " << pre_spikes_[j-1] << ", t_post = " << post_spikes[i] << ", wdev = " << wdev_ << std::endl;
     K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] - 1  ) / tau_minus_ ) + 1.0;
     ++i;
   }
@@ -163,7 +143,6 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
     wdev_ *= 0.9;
   }
 
-  //std::cout << "before boundary check weight = " << w_new << std::endl;
   if ( w_new > 0.0 )
   {
     if ( w_new < Wmax_ )
@@ -179,18 +158,10 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
   {
     weight_ = 0.0;
   }
-  //std::cout << "after update weight = " << std::setprecision(15) << weight_ << std::endl;
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
   pre_spikes_.erase(pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
-
-  /* std::cout << "after update pre_spikes = [ "; */
-  /* for ( std::vector< double >::const_iterator it = pre_spikes_.begin(); it < pre_spikes_.end(); ++it ) */
-  /* { */
-  /*   std::cout << (*it) << ", "; */
-  /* } */
-  /* std::cout << "]" << std::endl; */
 
   t_last_update_ = t_trig;
 }
