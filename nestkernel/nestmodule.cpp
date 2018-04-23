@@ -475,6 +475,83 @@ NestModule::SimulateFunction::execute( SLIInterpreter* i ) const
 }
 
 /* BeginDocumentation
+   Name: Run - simulate n milliseconds
+
+   Synopsis:
+   n(int) Run -> -
+
+   Description: Simulate the network for n milliseconds.
+   Call prepare before, and cleanup after.
+   t m mul Simulate = Prepare m { t Run } repeat Cleanup
+
+   Note: Run must only be used after Prepare is called, and
+   before Cleanup to finalize state (close files, etc).
+   Any changes made between Prepare and Cleanup may cause
+   undefined behavior and incorrect results.
+
+   SeeAlso: Simulate, resume, unit_conversion, Prepare, Cleanup
+*/
+void
+NestModule::RunFunction::execute( SLIInterpreter* i ) const
+{
+  i->assert_stack_load( 1 );
+
+  const double time = i->OStack.top();
+
+  run( time );
+
+  i->OStack.pop();
+  i->EStack.pop();
+}
+
+
+/* BeginDocumentation
+   Name: Prepare - prepare the network for a simulation
+
+   Synopsis:
+   Prepare -> -
+
+   Description: sets up network calibration before run is called
+   any number of times
+
+   Note: Run must only be used after Prepare is called, and
+   before Cleanup to finalize state (close files, etc).
+   Any changes made between Prepare and Cleanup may cause
+   undefined behavior and incorrect results.
+
+   SeeAlso: Run, Cleanup, Simulate
+*/
+void
+NestModule::PrepareFunction::execute( SLIInterpreter* i ) const
+{
+  prepare();
+  i->EStack.pop();
+}
+
+/* BeginDocumentation
+   Name: Cleanup - cleanup the network after a simulation
+
+   Synopsis:
+   Cleanup -> -
+
+   Description: tears down a network after run is called
+   any number of times
+
+   Note: Run must only be used after Prepare is called, and
+   before Cleanup to finalize state (close files, etc).
+   Any changes made between Prepare and Cleanup may cause
+   undefined behavior and incorrect results.
+
+   SeeAlso: Run, Prepare, Simulate
+*/
+void
+NestModule::CleanupFunction::execute( SLIInterpreter* i ) const
+{
+  cleanup();
+  i->EStack.pop();
+}
+
+/* BeginDocumentation
    Name: CopyModel - copy a model to a new name, set parameters for copy, if
    given
    Synopsis:
@@ -649,7 +726,7 @@ NestModule::ResetKernelFunction::execute( SLIInterpreter* i ) const
    at T=0. The dynamic state comprises typically the membrane potential,
    synaptic currents, buffers holding input that has been delivered, but not
    yet become effective, and all events pending delivery. Technically, this
-   is achieve by calling init_state() on all nodes and forcing a call to
+   is achieved by calling init_state() on all nodes and forcing a call to
    init_buffers() upon the next call to Simulate. Node parameters, such as
    time constants and threshold potentials, are not affected.
 
@@ -787,6 +864,11 @@ NestModule::DataConnect_i_D_sFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 3 );
 
+  if ( kernel().vp_manager.get_num_threads() > 1 )
+  {
+    throw KernelException( "DataConnect cannot be used with multiple threads" );
+  }
+
   const index source = getValue< long >( i->OStack.pick( 2 ) );
   DictionaryDatum params = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
   const Name synmodel_name = getValue< std::string >( i->OStack.pick( 0 ) );
@@ -845,6 +927,12 @@ void
 NestModule::DataConnect_aFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 1 );
+
+  if ( kernel().vp_manager.get_num_threads() > 1 )
+  {
+    throw KernelException( "DataConnect cannot be used with multiple threads" );
+  }
+
   const ArrayDatum connectome = getValue< ArrayDatum >( i->OStack.top() );
 
   kernel().connection_manager.data_connect_connectome( connectome );
@@ -886,7 +974,7 @@ NestModule::MemoryInfoFunction::execute( SLIInterpreter* i ) const
    - Each Node is shown on a separate line, showing its model name followed
    by its in global id in brackets.
 
-   +-[0] Subnet Dim=[1]
+   +-[0] subnet Dim=[1]
    |
    +- iaf_psc_alpha [1]
 
@@ -895,7 +983,7 @@ NestModule::MemoryInfoFunction::execute( SLIInterpreter* i ) const
    sequence, then the number of consecutive nodes, then the global id of
    the last node in the sequence.
 
-   +-[0] Subnet Dim=[1]
+   +-[0] subnet Dim=[1]
    |
    +- iaf_psc_alpha [1]..(2)..[2]
 
@@ -917,90 +1005,89 @@ NestModule::MemoryInfoFunction::execute( SLIInterpreter* i ) const
    SLI [3] 0 2 PrintNetwork
    +-[0] root dim=[12]
       |
-      +- [1] iaf_psc_alpha
-      +- [2]...[11] iaf_cond_alpha
-      +- [12] subnet dim=[2 5 6]
+      +-[1] iaf_psc_alpha
+      +-[2]...[11] iaf_cond_alpha
+      +-[12] subnet dim=[2 5 6]
    SLI [3] 0 3 PrintNetwork
    +-[0] root dim=[12]
       |
-      +- [1] iaf_psc_alpha
-      +- [2]...[11] iaf_cond_alpha
-      +- [12] subnet dim=[2 5 6]
-          |
-          +-[1] subnet dim=[5 6]
-          +-[2] subnet dim=[5 6]
+      +-[1] iaf_psc_alpha
+      +-[2]...[11] iaf_cond_alpha
+      +-[12] subnet dim=[2 5 6]
+         |
+         +-[1] subnet dim=[5 6]
+         +-[2] subnet dim=[5 6]
    SLI [3] 0 4 PrintNetwork
    +-[0] root dim=[12]
       |
-      +- [1] iaf_psc_alpha
-      +- [2]...[11] iaf_cond_alpha
-      +- [12] subnet dim=[2 5 6]
-          |
-          +-[1] subnet dim=[5 6]
-          |  |
-          |  +-[1] subnet dim=[6]
-          |  +-[2] subnet dim=[6]
-          |  +-[3] subnet dim=[6]
-          |  +-[4] subnet dim=[6]
-          |  +-[5] subnet dim=[6]
-          +-[2] subnet dim=[5 6]
-             |
-             +-[1] subnet dim=[6]
-             +-[2] subnet dim=[6]
-             +-[3] subnet dim=[6]
-             +-[4] subnet dim=[6]
-             +-[5] subnet dim=[6]
+      +-[1] iaf_psc_alpha
+      +-[2]...[11] iaf_cond_alpha
+      +-[12] subnet dim=[2 5 6]
+         |
+         +-[1] subnet dim=[5 6]
+         |  |
+         |  +-[1] subnet dim=[6]
+         |  +-[2] subnet dim=[6]
+         |  +-[3] subnet dim=[6]
+         |  +-[4] subnet dim=[6]
+         |  +-[5] subnet dim=[6]
+         +-[2] subnet dim=[5 6]
+            |
+            +-[1] subnet dim=[6]
+            +-[2] subnet dim=[6]
+            +-[3] subnet dim=[6]
+            +-[4] subnet dim=[6]
+            +-[5] subnet dim=[6]
    SLI [3] 0 5 PrintNetwork
    +-[0] root dim=[12]
       |
-      +- [1] iaf_psc_alpha
-      +- [2]...[11] iaf_cond_alpha
-      +- [12] subnet dim=[2 5 6]
-          |
-          +-[1] subnet dim=[5 6]
-          |  |
-          |  +-[1] subnet dim=[6]
-          |  |  |
-          |  |  +- [1]...[6] dc_generator
-          |  |
-          |  +-[2] subnet dim=[6]
-          |  |  |
-          |  |  +- [1]...[6] dc_generator
-          |  |
-          |  +-[3] subnet dim=[6]
-          |  |  |
-          |  |  +- [1]...[6] dc_generator
-          |  |
-          |  +-[4] subnet dim=[6]
-          |  |  |
-          |  |  +- [1]...[6] dc_generator
-          |  |
-          |  +-[5] subnet dim=[6]
-          |     |
-          |     +- [1]...[6] dc_generator
-          |
-          +-[2] subnet dim=[5 6]
-             |
-             +-[1] subnet dim=[6]
-             |  |
-             |  +- [1]...[6] dc_generator
-             |
-             +-[2] subnet dim=[6]
-             |  |
-             |  +- [1]...[6] dc_generator
-             |
-             +-[3] subnet dim=[6]
-             |  |
-             |  +- [1]...[6] dc_generator
-             |
-             +-[4] subnet dim=[6]
-             |  |
-             |  +- [1]...[6] dc_generator
-             |
-             +-[5] subnet dim=[6]
-                |
-                +- [1]...[6] dc_generator
-
+      +-[1] iaf_psc_alpha
+      +-[2]...[11] iaf_cond_alpha
+      +-[12] subnet dim=[2 5 6]
+         |
+         +-[1] subnet dim=[5 6]
+         |  |
+         |  +-[1] subnet dim=[6]
+         |  |  |
+         |  |  +-[1]...[6] dc_generator
+         |  |
+         |  +-[2] subnet dim=[6]
+         |  |  |
+         |  |  +-[1]...[6] dc_generator
+         |  |
+         |  +-[3] subnet dim=[6]
+         |  |  |
+         |  |  +-[1]...[6] dc_generator
+         |  |
+         |  +-[4] subnet dim=[6]
+         |  |  |
+         |  |  +-[1]...[6] dc_generator
+         |  |
+         |  +-[5] subnet dim=[6]
+         |     |
+         |     +-[1]...[6] dc_generator
+         |
+         +-[2] subnet dim=[5 6]
+            |
+            +-[1] subnet dim=[6]
+            |  |
+            |  +-[1]...[6] dc_generator
+            |
+            +-[2] subnet dim=[6]
+            |  |
+            |  +-[1]...[6] dc_generator
+            |
+            +-[3] subnet dim=[6]
+            |  |
+            |  +-[1]...[6] dc_generator
+            |
+            +-[4] subnet dim=[6]
+            |  |
+            |  +-[1]...[6] dc_generator
+            |
+            +-[5] subnet dim=[6]
+               |
+               +-[1]...[6] dc_generator
 
    Availability: NEST
    Author: Marc-Oliver Gewaltig, Jochen Martin Eppler
@@ -1612,6 +1699,26 @@ NestModule::DisableStructuralPlasticity_Function::execute(
   i->EStack.pop();
 }
 
+/**
+ * Set epsilon that is used for comparing spike times in STDP.
+ * Spike times in STDP synapses are currently represented as double
+ * values. The epsilon defines the maximum distance between spike
+ * times that is still considered 0.
+ *
+ * Note: See issue #894
+ */
+void
+NestModule::SetStdpEps_dFunction::execute( SLIInterpreter* i ) const
+{
+  i->assert_stack_load( 1 );
+  const double stdp_eps = getValue< double >( i->OStack.top() );
+
+  kernel().connection_manager.set_stdp_eps( stdp_eps );
+
+  i->OStack.pop();
+  i->EStack.pop();
+}
+
 void
 NestModule::init( SLIInterpreter* i )
 {
@@ -1643,6 +1750,9 @@ NestModule::init( SLIInterpreter* i )
   i->createcommand( "cva_C", &cva_cfunction );
 
   i->createcommand( "Simulate_d", &simulatefunction );
+  i->createcommand( "Run_d", &runfunction );
+  i->createcommand( "Prepare", &preparefunction );
+  i->createcommand( "Cleanup", &cleanupfunction );
 
   i->createcommand( "CopyModel_l_l_D", &copymodel_l_l_Dfunction );
   i->createcommand( "SetDefaults_l_D", &setdefaults_l_Dfunction );
@@ -1704,6 +1814,9 @@ NestModule::init( SLIInterpreter* i )
     "GetStructuralPlasticityStatus", &getstructuralplasticitystatus_function );
   i->createcommand( "Disconnect", &disconnect_i_i_lfunction );
   i->createcommand( "Disconnect_g_g_D_D", &disconnect_g_g_D_Dfunction );
+
+  i->createcommand( "SetStdpEps", &setstdpeps_dfunction );
+
   // Add connection rules
   kernel().connection_manager.register_conn_builder< OneToOneBuilder >(
     "one_to_one" );

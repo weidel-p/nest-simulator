@@ -171,8 +171,9 @@ def CreateMask(masktype, specs, anchor=None):
 
     Parameters
     ----------
-    masktype : str, ['rectangular' | 'circular' | 'doughnut'] for 2D masks, \
-['box' | 'spherical'] for 3D masks, ['grid'] only for grid-based layers in 2D
+    masktype : str, ['rectangular' | 'circular' | 'doughnut' | 'elliptical']
+        for 2D masks, \ ['box' | 'spherical' | 'ellipsoidal] for 3D masks,
+        ['grid'] only for grid-based layers in 2D
         The mask name corresponds to the geometrical shape of the mask. There
         are different types for 2- and 3-dimensional layers.
     specs : dict
@@ -199,7 +200,7 @@ def CreateMask(masktype, specs, anchor=None):
 
     Notes
     -----
-    -
+    - All angles must be given in degrees.
 
 
     **Mask types**
@@ -211,8 +212,9 @@ def CreateMask(masktype, specs, anchor=None):
         ::
 
             'rectangular' :
-                {'lower_left' : [float, float],
-                 'upper_right': [float, float]}
+                {'lower_left'   : [float, float],
+                 'upper_right'  : [float, float],
+                 'azimuth_angle': float  # default:0.0}
             #or
             'circular' :
                 {'radius' : float}
@@ -220,17 +222,33 @@ def CreateMask(masktype, specs, anchor=None):
             'doughnut' :
                 {'inner_radius' : float,
                  'outer_radius' : float}
+            #or
+            'elliptical' :
+                {'major_axis' : float,
+                 'minor_axis' : float,
+                 'azimuth_angle' : float,   # default: 0.0,
+                 'anchor' : [float, float], # default: [0.0, 0.0]}
 
 
     * 3D free and grid-based layers
         ::
 
             'box' :
-                {'lower_left' : [float, float, float],
-                 'upper_right' : [float, float, float]}
+                {'lower_left'  : [float, float, float],
+                 'upper_right' : [float, float, float],
+                 'azimuth_angle: float  # default: 0.0,
+                 'polar_angle  : float  # defualt: 0.0}
             #or
             'spherical' :
                 {'radius' : float}
+            #or
+            'ellipsoidal' :
+                {'major_axis' : float,
+                 'minor_axis' : float,
+                 'polar_axis' : float
+                 'azimuth_angle' : float,   # default: 0.0,
+                 'polar_angle' : float,     # default: 0.0,
+                 'anchor' : [float, float, float], # default: [0.0, 0.0, 0.0]}}
 
 
     * 2D grid-based layers only
@@ -2098,6 +2116,21 @@ def PlotKernel(ax, src_nrn, mask, kern=None, mask_color='red',
         ax.add_patch(
             plt.Rectangle(srcpos + ll + offs, ur[0] - ll[0], ur[1] - ll[1],
                           zorder=-1000, fc='none', ec=mask_color, lw=3))
+    elif 'elliptical' in mask:
+        width = mask['elliptical']['major_axis']
+        height = mask['elliptical']['minor_axis']
+        if 'azimuth_angle' in mask['elliptical']:
+            angle = mask['elliptical']['azimuth_angle']
+        else:
+            angle = 0.0
+        if 'anchor' in mask['elliptical']:
+            anchor = mask['elliptical']['anchor']
+        else:
+            anchor = [0., 0.]
+        ax.add_patch(
+            matplotlib.patches.Ellipse(srcpos + offs + anchor, width, height,
+                                       angle=angle, zorder=-1000, fc='none',
+                                       ec=mask_color, lw=3))
     else:
         raise ValueError(
             'Mask type cannot be plotted with this version of PyTopology.')
@@ -2115,3 +2148,37 @@ def PlotKernel(ax, src_nrn, mask, kern=None, mask_color='red',
                              'version of PyTopology')
 
     plt.draw()
+
+
+def SelectNodesByMask(layer, anchor, mask_obj):
+    """
+    Obtain the GIDs inside a masked area of a topology layer.
+
+    The function finds and returns all the GIDs inside a given mask of a single
+    layer. It works on both 2-dimensional and 3-dimensional masks and layers.
+    All mask types are allowed, including combined masks.
+
+    Parameters
+    ----------
+    layer : tuple/list of int
+        List containing the single layer to select nodes from.
+    anchor : tuple/list of double
+        List containing center position of the layer. This is the point from
+        where we start to search.
+    mask_obj: object
+        Mask object specifying chosen area.
+
+    Returns
+    -------
+    out : list of int(s)
+        GID(s) of nodes/elements inside the mask.
+    """
+
+    if len(layer) != 1:
+        raise ValueError("layer must contain exactly one GID.")
+
+    mask_datum = mask_obj._datum
+
+    gid_list = topology_func('SelectNodesByMask', layer[0], anchor, mask_datum)
+
+    return gid_list

@@ -94,7 +94,7 @@
   The following parameters can be set in the status dictionary.
 
   Membrane Parameters:
-    C_m        double - Capacity of the membrane in pF
+    C_m        double - Capacitance of the membrane in pF
     t_ref      double - Duration of refractory period in ms.
     V_reset    double - Reset value after a spike in mV.
     E_L        double - Leak reversal potential in mV.
@@ -133,7 +133,7 @@
 
   Author: March 2016, Setareh
   SeeAlso: pp_psc_delta, gif_psc_exp_multisynapse, gif_cond_exp,
-  gif_cond_exp_multisynapse
+  gif_cond_exp_multisynapse, gif_pop_psc_exp
 
 */
 
@@ -370,7 +370,9 @@ inline port
 gif_psc_exp::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -378,7 +380,9 @@ inline port
 gif_psc_exp::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -386,7 +390,9 @@ inline port
 gif_psc_exp::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
 }
 

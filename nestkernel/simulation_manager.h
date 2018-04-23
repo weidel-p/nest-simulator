@@ -52,12 +52,38 @@ public:
   virtual void get_status( DictionaryDatum& );
 
   /**
+      check for errors in time before run
+      @throws KernelException if illegal time passed
+  */
+  void assert_valid_simtime( Time const& );
+
+  /*
+     Simulate can be broken up into .. prepare... run.. run.. cleanup..
+     instead of calling simulate multiple times, and thus reduplicating
+     effort in prepare, cleanup many times.
+  */
+
+  /**
+     Initialize simulation for a set of run calls.
+     Must be called before a sequence of runs, and again after cleanup.
+  */
+  void prepare();
+  /**
+     Run a simulation for another `Time`. Can be repeated ad infinitum with
+     calls to get_status(), but any changes to the network are undefined,
+     leading serious risk of incorrect results.
+  */
+  void run( Time const& );
+  /**
+     Closes a set of runs, doing finalizations such as file closures.
+     After cleanup() is called, no more run()s can be called before another
+     prepare() call.
+  */
+  void cleanup();
+
+  /**
    * Simulate for the given time .
-   * This function performs the following steps
-   * 1. set the new simulation time
-   * 2. call prepare_simulation()
-   * 3. call resume()
-   * 4. call finalize_simulation()
+   * calls prepare(); run(Time&); cleanup();
    */
   void simulate( Time const& );
 
@@ -131,10 +157,8 @@ public:
   delay get_syn_update_interval() const;
 
 private:
-  void resume_( size_t );       //!< actually run simulation; TODO: review
-  size_t prepare_simulation_(); //! setup before simulation start
-  void finalize_simulation_();  //! wrap-up after simulation end
-  void update_();               //! actually perform simulation
+  void call_update_(); //!< actually run simulation, aka wrap update_
+  void update_();      //! actually perform simulation
   bool wfr_update_( Node* );
   void advance_time_();   //!< Update time to next time step
   void print_progress_(); //!< TODO: Remove, replace by logging!
@@ -147,7 +171,9 @@ private:
   delay to_step_;         //!< update clock_+from_step<=T<clock_+to_step_
   timeval t_slice_begin_; //!< Wall-clock time at the begin of a time slice
   timeval t_slice_end_;   //!< Wall-clock time at the end of time slice
-  long t_real_;     //!< Accumunated wall-clock time spent simulating (in us)
+  long t_real_;   //!< Accumulated wall-clock time spent simulating (in us)
+  bool prepared_; //!< Indicates whether the SimulationManager is in a prepared
+                  //!< state
   bool simulating_; //!< true if simulation in progress
   bool simulated_; //!< indicates whether the SimulationManager has already been
                    //!< simulated for sometime

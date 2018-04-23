@@ -152,8 +152,8 @@ STDPIzhConnection::time_driven_update( const thread tid, const double t_trig, co
 
     // facilitation (also for t_pre_spike == t_post_spike)
     // depression (also for t_pre_spike == t_post_spike)
-    int dt = pre_spikes_[j] - post_spikes[i-1];
-    wdev_ += cp.LTD_ * std::exp( -(dt-1) / cp.tau_LTD_ );
+    int dt = pre_spikes_[j] - post_spikes[i-1] - kernel().connection_manager.get_min_delay();
+    wdev_ += cp.LTD_ * std::exp( -dt / cp.tau_LTD_ );
   }
   
   // process remaining postsynaptic spikes in this update interval if there are any

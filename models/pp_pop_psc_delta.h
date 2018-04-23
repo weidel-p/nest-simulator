@@ -87,8 +87,9 @@ namespace nest
    account. Alternatively, the internal variable n_events gives the number of
    spikes emitted in a time step, and can be monitored using a multimeter.
 
-   A journal article that describes the model and algorithm in detail is
-   in preparation.
+   EDIT Nov 2016: pp_pop_psc_delta is now deprecated, because a new and
+   presumably much faster population model implementation is now available, see
+   gif_pop_psc_exp.
 
 
    References:
@@ -145,7 +146,8 @@ namespace nest
    Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
    Author: May 2014, Setareh, Deger
-   SeeAlso: pp_psc_delta, ppd_sup_generator, gamma_sup_generator
+   SeeAlso: gif_pop_psc_exp, pp_psc_delta, ppd_sup_generator,
+   gamma_sup_generator
 */
 
 /**
@@ -359,7 +361,9 @@ inline port
 pp_pop_psc_delta::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -367,7 +371,9 @@ inline port
 pp_pop_psc_delta::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
@@ -376,7 +382,9 @@ pp_pop_psc_delta::handles_test_event( DataLoggingRequest& dlr,
   rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
 }
 

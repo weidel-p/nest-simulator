@@ -232,7 +232,7 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
     double ev_offset;                        // not used here
     double ev_weight;                        // pointer to synapse that requires casting
     bool end_of_refract;                     // not used here
-    while ( B_.stdp_izh_spikes_.get_next_spike( T, ev_offset, ev_weight, end_of_refract ) )
+    while ( B_.stdp_izh_spikes_.get_next_spike( T, true, ev_offset, ev_weight, end_of_refract ) )
     {
       const STDPIzhConnection* syn = reinterpret_cast< STDPIzhConnection* >( static_cast< long >( ev_weight ) );
       I_syn += syn->get_weight();

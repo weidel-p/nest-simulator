@@ -25,6 +25,7 @@
 
 // C++ includes:
 #include <limits>
+#include <math.h>
 
 // Includes from librandom:
 #include "normal_randomdev.h"
@@ -45,7 +46,9 @@
 
 namespace nest
 {
-class TopologyModule;
+class TopologyParameter;
+typedef lockPTRDatum< TopologyParameter, &TopologyModule::ParameterType >
+  ParameterDatum;
 
 /**
  * Abstract base class for parameters
@@ -97,9 +100,13 @@ public:
   {
     double val = raw_value( p, rng );
     if ( val < cutoff_ )
+    {
       return 0.0;
+    }
     else
+    {
       return val;
+    }
   }
 
   /**
@@ -110,9 +117,13 @@ public:
   {
     double val = raw_value( p, rng );
     if ( val < cutoff_ )
+    {
       return 0.0;
+    }
     else
+    {
       return val;
+    }
   }
 
   /**
@@ -174,9 +185,6 @@ public:
 private:
   double cutoff_;
 };
-
-typedef lockPTRDatum< TopologyParameter, &TopologyModule::ParameterType >
-  ParameterDatum;
 
 /**
  * Parameter with constant value.
@@ -322,9 +330,11 @@ public:
     updateValue< double >( d, names::c, c_ );
     updateValue< double >( d, names::tau, tau_ );
     if ( tau_ <= 0 )
+    {
       throw BadProperty(
         "topology::ExponentialParameter: "
         "tau > 0 required." );
+    }
   }
 
   double
@@ -369,9 +379,11 @@ public:
     updateValue< double >( d, names::mean, mean_ );
     updateValue< double >( d, names::sigma, sigma_ );
     if ( sigma_ <= 0 )
+    {
       throw BadProperty(
         "topology::GaussianParameter: "
         "sigma > 0 required." );
+    }
   }
 
   double
@@ -445,6 +457,66 @@ private:
   double c_, p_center_, mean_x_, sigma_x_, mean_y_, sigma_y_, rho_;
 };
 
+/**
+ * Gamma parameter p(d) = d^(kappa-1)*exp(-d/theta)/(theta^kappa*Gamma(kappa))
+ */
+class GammaParameter : public RadialParameter
+{
+public:
+  /**
+   * Parameters:
+   * kappa    - shape of gamma distribution
+   * theta    - scale of gamma distribution
+   */
+  GammaParameter( const DictionaryDatum& d )
+    : RadialParameter( d )
+    , kappa_( 1.0 )
+    , theta_( 1.0 )
+    , inv_theta_( 1.0 / theta_ )
+    , delta_( 1.0 ) // consistent, cannot be computed explicitly here
+  {
+    updateValue< double >( d, names::kappa, kappa_ );
+    updateValue< double >( d, names::theta, theta_ );
+    if ( kappa_ <= 0 )
+    {
+      throw BadProperty(
+        "topology::GammaParameter: "
+        "kappa > 0 required." );
+    }
+    if ( theta_ <= 0 )
+    {
+      throw BadProperty(
+        "topology::GammaParameter: "
+        "theta > 0 required." );
+    }
+
+    inv_theta_ = 1. / theta_;
+    // TODO: tgamma() is available from math.h as C99 function,
+    //       but was added to C++ only per C++11. Add std::
+    //       once we convert NEST compilation to C++11.
+    delta_ = std::pow( inv_theta_, kappa_ ) / tgamma( kappa_ );
+  }
+
+  double
+  raw_value( double x ) const
+  {
+    return std::pow( x, kappa_ - 1. ) * std::exp( -1. * inv_theta_ * x )
+      * delta_;
+  }
+
+  TopologyParameter*
+  clone() const
+  {
+    return new GammaParameter( *this );
+  }
+
+private:
+  double kappa_;
+  double theta_;
+  double inv_theta_;
+  double delta_;
+};
+
 
 /**
  * Random parameter with uniform distribution in [min,max)
@@ -465,11 +537,12 @@ public:
   {
     updateValue< double >( d, names::min, lower_ );
     updateValue< double >( d, names::max, range_ );
-
     if ( lower_ >= range_ )
+    {
       throw BadProperty(
         "topology::UniformParameter: "
         "min < max required." );
+    }
 
     range_ -= lower_;
   }
@@ -524,15 +597,18 @@ public:
     updateValue< double >( d, names::sigma, sigma_ );
     updateValue< double >( d, names::min, min_ );
     updateValue< double >( d, names::max, max_ );
-
     if ( sigma_ <= 0 )
+    {
       throw BadProperty(
         "topology::NormalParameter: "
         "sigma > 0 required." );
+    }
     if ( min_ >= max_ )
+    {
       throw BadProperty(
         "topology::NormalParameter: "
         "min < max required." );
+    }
   }
 
   double
@@ -597,15 +673,18 @@ public:
     updateValue< double >( d, names::sigma, sigma_ );
     updateValue< double >( d, names::min, min_ );
     updateValue< double >( d, names::max, max_ );
-
     if ( sigma_ <= 0 )
+    {
       throw BadProperty(
         "topology::LognormalParameter: "
         "sigma > 0 required." );
+    }
     if ( min_ >= max_ )
+    {
       throw BadProperty(
         "topology::LognormalParameter: "
         "min < max required." );
+    }
   }
 
   double
