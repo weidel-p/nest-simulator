@@ -239,6 +239,7 @@ extern const Name init_flag;
 extern const Name initial_connector_capacity;
 extern const Name instant_unblock_NMDA;
 extern const Name instantiations;
+extern const Name integration_steps;
 extern const Name Interpol_Order;
 extern const Name interval;
 extern const Name is_refractory;

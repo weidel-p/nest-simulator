@@ -77,6 +77,7 @@ nest::izhikevich::Parameters_::Parameters_()
   , V_th_( 30.0 )                                   // mV
   , V_min_( -std::numeric_limits< double >::max() ) // mV
   , consistent_integration_( true )
+  , integration_steps_ ( 1 )
 {
 }
 
@@ -102,6 +103,7 @@ nest::izhikevich::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::c, c_ );
   def< double >( d, names::d, d_ );
   def< bool >( d, names::consistent_integration, consistent_integration_ );
+  def< long >( d, names::integration_steps, integration_steps_ );
 }
 
 void
@@ -115,6 +117,7 @@ nest::izhikevich::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::b, b_ );
   updateValue< double >( d, names::c, c_ );
   updateValue< double >( d, names::d, d_ );
+  updateValue< long >( d, names::integration_steps, integration_steps_);
   updateValue< bool >(
     d, names::consistent_integration, consistent_integration_ );
   const double h = Time::get_resolution().get_ms();
@@ -242,11 +245,15 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
     // use standard forward Euler numerics in this case
     if ( P_.consistent_integration_ )
     {
-      v_old = S_.v_;
-      u_old = S_.u_;
-      S_.v_ += h * ( 0.04 * v_old * v_old + 5.0 * v_old + 140.0 - u_old + S_.I_
-                     + P_.I_e_ ) + I_syn;
-      S_.u_ += h * P_.a_ * ( P_.b_ * v_old - u_old );
+        for (int ts = 0; ts < P_.integration_steps_; ++ts){
+            v_old = S_.v_;
+            u_old = S_.u_;
+            S_.v_ += (1. / P_.integration_steps_) * ( h * ( 0.04 * v_old * v_old + 5.0 * v_old + 140.0 - u_old + S_.I_
+                           + P_.I_e_ ) + I_syn );
+            S_.u_ += (1. / P_.integration_steps_) * h * P_.a_ * ( P_.b_ * v_old - u_old );
+            if ( S_.v_ >= P_.V_th_ )
+                break;
+        }
     }
     // use numerics published in Izhikevich (2003) in this case (not
     // recommended)
@@ -259,9 +266,13 @@ nest::izhikevich::update( Time const& origin, const long from, const long to )
       //                     + S_.I_ + P_.I_e_ + I_syn );
       //S_.u_ += h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ );
 
-      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn  );
-      S_.v_ += h * 0.5 * ( (0.04 * S_.v_ +5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn  );
-      S_.u_ += h * P_.a_ * ( 0.2 * S_.v_ - S_.u_ );
+        for (int ts = 0; ts < P_.integration_steps_; ++ts){
+            S_.v_ += (1. / P_.integration_steps_) * ( h * 0.5 * ( (0.04 * S_.v_ + 5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn ) );
+            S_.v_ += (1. / P_.integration_steps_) * ( h * 0.5 * ( (0.04 * S_.v_ + 5) * S_.v_  + 140. - S_.u_ + S_.I_ + P_.I_e_ + I_syn ) );
+            S_.u_ += (1. / P_.integration_steps_) * ( h * P_.a_ * ( P_.b_ * S_.v_ - S_.u_ ) ) ;
+            if ( S_.v_ >= P_.V_th_ )
+                break;
+        }
     }
 
     // lower bound of membrane potential

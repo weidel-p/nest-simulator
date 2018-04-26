@@ -78,6 +78,7 @@ namespace nest
    c          double - after-spike reset value of V_m
    d          double - after-spike reset value of U_m
    consistent_integration  bool - use standard integration technique
+   integration_steps int - integration steps per resolution timestep. Default = 1 
 
 
    References:
@@ -159,6 +160,9 @@ private:
 
     /** Use standard integration numerics **/
     bool consistent_integration_;
+
+    /** Number of integration steps **/
+    long integration_steps_;
 
     Parameters_(); //!< Sets default parameter values
 

@@ -217,6 +217,7 @@ const Name init_flag( "init_flag" );
 const Name initial_connector_capacity( "initial_connector_capacity" );
 const Name instant_unblock_NMDA( "instant_unblock_NMDA" );
 const Name instantiations( "instantiations" );
+const Name integration_steps( "integration_steps" );
 const Name Interpol_Order( "Interpol_Order" );
 const Name interval( "interval" );
 const Name is_refractory( "is_refractory" );
