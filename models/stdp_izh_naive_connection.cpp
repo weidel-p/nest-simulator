@@ -105,30 +105,33 @@ STDPIzhNaiveConnection::time_driven_update( const thread tid, const double t_tri
   index i = 1; // index to iterate over post_spikes
   index j = 1; // index to iterate over pre_spikes_
 
-  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] <= t_trig; ++j )
+  // pre_spikes_[j] <= t_trig
+  for ( j = 1; j < pre_spikes_.size() && ( t_trig - pre_spikes_[j] ) > ( -1.0 * kernel().connection_manager.get_stdp_eps() ); ++j )
   {
-    while ( i < post_spikes.size() && post_spikes[i] <= pre_spikes_[j] )
+    // post_spikes[i] <= pre_spikes_[j]
+    while ( i < post_spikes.size() && ( pre_spikes_[j] - post_spikes[i] ) > ( -1.0 * kernel().connection_manager.get_stdp_eps() ) )
     {
       // facilitation (also for t_pre_spike == t_post_spike)
       wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] ) / tau_plus_ );
       K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
       ++i;
     }
-    
+
     // depression (also for t_pre_spike == t_post_spike)
     wdev_ -= alpha_ * lambda_ * K_minus_ * std::exp( ( post_spikes[i-1] - pre_spikes_[j] )  / tau_minus_);
     K_plus_ = K_plus_ * std::exp( ( pre_spikes_[j-1] - pre_spikes_[j] ) / tau_plus_ ) + 1.0;
   }
   
   // process remaining postsynaptic spikes in this update interval if there are any
-  while ( i < post_spikes.size() && post_spikes[i] <= t_trig )
+  // post_spikes[i] <= t_trig
+  while ( i < post_spikes.size() && ( t_trig - post_spikes[i] ) > ( -1.0 * kernel().connection_manager.get_stdp_eps() ) )
   {
     // facilitation
     wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] ) / tau_plus_ );
     K_minus_ = K_minus_ * std::exp( ( post_spikes[i-1] - post_spikes[i] ) / tau_minus_ ) + 1.0;
     ++i;
   }
-  
+
   double w_new = weight_ + wdev_;
   if ( consistent_integration_ )
   {
@@ -158,7 +161,7 @@ STDPIzhNaiveConnection::time_driven_update( const thread tid, const double t_tri
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
-  pre_spikes_.erase(pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
+  pre_spikes_.erase( pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
 
   t_last_update_ = t_trig;
 }

@@ -108,9 +108,11 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
   // pre_spikes[0] and post_spikes[0] are the times of the last
   // presynaptic and postsynaptic spike in the last update interval, respectively
 
-  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] < t_trig; ++j )
+  // pre_spikes_[j] < t_trig
+  for ( j = 1; j < pre_spikes_.size() && ( t_trig - pre_spikes_[j] ) > kernel().connection_manager.get_stdp_eps(); ++j )
   {
-    while ( i < post_spikes.size() && post_spikes[i] < pre_spikes_[j] )
+    // post_spikes[i] < pre_spikes_[j]
+    while ( i < post_spikes.size() && ( pre_spikes_[j] - post_spikes[i] ) > kernel().connection_manager.get_stdp_eps() )
     {
       // facilitation (also for t_pre_spike == t_post_spike)
       wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i] - 2 ) / tau_plus_ );
@@ -124,7 +126,8 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
   }
   
   // process remaining postsynaptic spikes in this update interval if there are any
-  while ( i < post_spikes.size() && post_spikes[i] < t_trig )
+  // post_spikes[i] < t_trig
+  while ( i < post_spikes.size() && ( t_trig - post_spikes[i] ) > kernel().connection_manager.get_stdp_eps() )
   {
     // facilitation
     wdev_ += lambda_ * K_plus_ * std::exp( ( pre_spikes_[j-1] - post_spikes[i]  - 2 ) / tau_plus_ );
@@ -161,7 +164,7 @@ STDPIzhNewNaiveConnection::time_driven_update( const thread tid, const double t_
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
-  pre_spikes_.erase(pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
+  pre_spikes_.erase( pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
 
   t_last_update_ = t_trig;
 }

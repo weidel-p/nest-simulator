@@ -137,26 +137,24 @@ STDPIzhBitwiseCorrectConnection::time_driven_update( const thread tid, const dou
   index i = 1; // index to iterate over post_spikes
   index j = 1; // index to iterate over pre_spikes_
 
-  if (post_spikes[0] == t_last_update_){
-
-      post_spikes.insert(post_spikes.begin(), t_last_post_spike_);
+  // post_spikes[0] == t_last_update_
+  if ( std::abs( post_spikes[0] - t_last_update_ ) < kernel().connection_manager.get_stdp_eps() )
+  {
+    post_spikes.insert(post_spikes.begin(), t_last_post_spike_);
   }
 
-  for ( j = 1; j < pre_spikes_.size() && pre_spikes_[j] <= t_trig; ++j )
+  // pre_spikes_[j] <= t_trig
+  for ( j = 1; j < pre_spikes_.size() && ( t_trig - pre_spikes_[j] ) > ( -1.0 * kernel().connection_manager.get_stdp_eps() ); ++j )
   {
-
-    while ( i < post_spikes.size() && post_spikes[i] < pre_spikes_[j] )
+    // post_spikes[i] < pre_spikes_[j]
+    while ( i < post_spikes.size() && ( pre_spikes_[j] - post_spikes[i] ) > kernel().connection_manager.get_stdp_eps() )
     {
       int dt = post_spikes[i] - pre_spikes_[j-1];
 
-      if (post_spikes[i] == pre_spikes_[j])
-      {
-        dt = 0.;
-      }
-
       wdev_ += cp.pow_0_95_K_plus_->at(dt);
-      
-      if (plot_){
+
+      if (plot_)
+      {
         std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << cp.pow_0_95_K_plus_->at(dt) << std::endl;
       }
 
@@ -166,23 +164,25 @@ STDPIzhBitwiseCorrectConnection::time_driven_update( const thread tid, const dou
 
     wdev_ -= cp.pow_0_95_K_minus_->at(dt-1);
     
-    if (plot_){
+    if (plot_)
+    {
         std::cout << "LTD " << pre_spikes_[j] << " " << post_spikes[i-1] << " " << wdev_  << " " <<  cp.pow_0_95_K_minus_->at(dt-1) << std::endl;
     }
-
   }
   
   
   // process remaining postsynaptic spikes in this update interval if there are any
-  while ( i < post_spikes.size() && post_spikes[i] < t_trig )
+  // post_spikes[i] < t_trig
+  while ( i < post_spikes.size() && ( t_trig - post_spikes[i] ) > kernel().connection_manager.get_stdp_eps() )
   {
     // facilitation
     int dt = post_spikes[i] - pre_spikes_[j-1];
 
     wdev_ += cp.pow_0_95_K_plus_->at(dt);
 
-    if (plot_){
-        std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << cp.pow_0_95_K_plus_->at(dt) << std::endl;
+    if (plot_)
+    {
+      std::cout << "LTP " << pre_spikes_[j-1] << " " << post_spikes[i] << " " << wdev_  << " " << cp.pow_0_95_K_plus_->at(dt) << std::endl;
     }
     ++i;
   }
@@ -197,7 +197,7 @@ STDPIzhBitwiseCorrectConnection::time_driven_update( const thread tid, const dou
 
   // erase all processed presynaptic spikes except the last one
   // due to axonal there might be other pre_spikes left that are relevant only in the next update
-  pre_spikes_.erase(pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
+  pre_spikes_.erase( pre_spikes_.begin(), pre_spikes_.begin() + (j-1) );
 
 
   t_last_update_ = t_trig;
