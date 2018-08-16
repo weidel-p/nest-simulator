@@ -90,6 +90,7 @@ void
 nest::global_volume_transmitter::init_buffers_()
 {
   B_.trace_ = 0;
+  B_.resolution_ = Time::get_resolution().get_ms();
   Archiving_Node::clear_history();
 }
 
@@ -101,8 +102,8 @@ nest::global_volume_transmitter::calibrate()
 void
 nest::global_volume_transmitter::update( const Time&, const long from, const long to )
 {
- 
-  B_.trace_ *= std::exp(-(to-from) / P_.tau_);
+
+  B_.trace_ *=  std::exp(- (to-from) * B_.resolution_ / P_.tau_);
 
   // all spikes stored in spikecounter_ are delivered to the target synapses
   if ( ( kernel().simulation_manager.get_slice_origin().get_steps() + to )

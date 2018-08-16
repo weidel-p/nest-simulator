@@ -282,6 +282,7 @@ private:
  // data members of each connection
  double weight_;
  double Kplus_;
+ double Kminus_;
  double n_;
 
 
@@ -330,6 +331,7 @@ DopaConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
  // own properties, different for individual synapse
  def< double >( d, "n", n_ );
  def< double >( d, "Kplus", Kplus_ );
+ def< double >( d, "Kminus", Kminus_);
 }
 
 template < typename targetidentifierT >
@@ -343,6 +345,7 @@ DopaConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
 
  updateValue< double >( d, "n", n_ );
  updateValue< double >( d, "Kplus", Kplus_ );
+ updateValue< double >( d, "Kminus", Kminus_);
 }
 
 
@@ -362,7 +365,7 @@ DopaConnection< targetidentifierT >::process_next_(
   Node* target = get_target( t );
 
   // update all traces to  t0
-  double Kminus = target->get_firing_rate( t0 );
+  Kminus_ = target->get_K_value( t0 );
 
 
   // calculate decay before weight update
@@ -392,13 +395,23 @@ DopaConnection< targetidentifierT >::process_next_(
   }
 
   // update weight 
-  //double dw = cp.A_ * (Kplus_ * Kminus - Kplus_long_ * Kminus_long) * 
+  //double dw = cp.A_ * (Kplus_ * Kminus_ - Kplus_long_ * Kminus__long) * 
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-  if (Kminus > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
-      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus;
-  }
+//  if (Kminus_ > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
+//      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus_;
+//  }
+
+
+//  EXPERIMENTAL!!
+//  dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * (Kminus_ - cp.b_minus_);
+   dw = cp.A_ * Kplus_ * n_diff * Kminus_;
+
+//  std::cout << Kminus_ << std::endl;
+
+
+
 
   if (dw > 0){
       weight_ += dw;
@@ -422,7 +435,7 @@ DopaConnection< targetidentifierT >::process_next_(
    weight_ = cp.Wmin_;
  }
 
- // propagate Kplus_, Kminus_, n_ to t1 
+ // propagate Kplus_, Kminus__, n_ to t1 
  Kplus_ *= std::exp( ( t0 - t1 ) / cp.tau_ );
 
 
@@ -446,11 +459,10 @@ DopaConnection< targetidentifierT >::send( Event& e,
 {
 
  Node* target = get_target( t );
+
  // t_lastspike_ = 0 initially
 
  double t_spike = e.get_stamp().get_ms();
-
- double Kminus = target->get_firing_rate( t_spike );
 
  process_next_(t, t_last_update_, t_spike, cp);
 
@@ -459,11 +471,11 @@ DopaConnection< targetidentifierT >::send( Event& e,
  e.set_delay( get_delay_steps() );
  e.set_rport( get_rport() );
  e.set_Kplus( Kplus_ );
- e.set_Kminus( Kminus );
+ e.set_Kminus( Kminus_ );
  e.set_dopa( n_ );
  e();
 
- Kplus_ += 1./cp.tau_;
+ Kplus_ += 1.;
  t_last_update_ = t_spike;
 }
 

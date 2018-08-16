@@ -167,6 +167,7 @@ private:
  struct Buffers_
  {
      double trace_;
+     double resolution_;
  };
 
  Parameters_ P_;
