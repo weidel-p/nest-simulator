@@ -399,14 +399,14 @@ DopaConnection< targetidentifierT >::process_next_(
   //                    std::pow(n_diff, 2) * (t1 - t0); 
   
   double dw = 0;
-//  if (Kminus_ > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
-//      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus_;
-//  }
+  if (Kminus_ > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
+      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus_;
+  }
 
 
 //  EXPERIMENTAL!!
 //  dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * (Kminus_ - cp.b_minus_);
-   dw = cp.A_ * Kplus_ * n_diff * Kminus_;
+   //dw = cp.A_ * Kplus_ * n_diff * Kminus_;
 
 //  std::cout << Kminus_ << std::endl;
 
