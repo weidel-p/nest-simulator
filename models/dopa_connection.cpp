@@ -61,21 +61,21 @@ DopaCommonProperties::get_status( DictionaryDatum& d ) const
   CommonSynapseProperties::get_status( d );
 
   if ( vt_ != 0 )
-    def< long >( d, "vt", vt_->get_gid() );
+    def< long >( d, names::vt, vt_->get_gid() );
   else
-    def< long >( d, "vt", -1 );
+    def< long >( d, names::vt, -1 );
 
-  def< double >( d, "A", A_);
-  def< double >( d, "tau", tau_ );
-  def< double >( d, "tau_n", tau_n_ );
-  def< double >( d, "b_plus", b_plus_ );
-  def< double >( d, "b_minus", b_minus_ );
-  def< double >( d, "n_threshold", n_threshold_ );
-  def< double >( d, "Wmin", Wmin_ );
-  def< double >( d, "Wmax", Wmax_ );
-  def< double >( d, "LTD_scaling", LTD_scaling_ );
-  def< double >( d, "tau_decay", tau_decay_);
-  def< double >( d, "weight0", weight0_);
+  def< double >( d, names::A, A_);
+  def< double >( d, names::tau, tau_ );
+  def< double >( d, names::tau_n, tau_n_ );
+  def< double >( d, names::b_plus, b_plus_ );
+  def< double >( d, names::b_minus, b_minus_ );
+  def< double >( d, names::n_threshold, n_threshold_ );
+  def< double >( d, names::Wmin, Wmin_ );
+  def< double >( d, names::Wmax, Wmax_ );
+  def< double >( d, names::LTD_scaling, LTD_scaling_ );
+  def< double >( d, names::tau_decay, tau_decay_);
+  def< double >( d, names::weight0, weight0_);
 }
 
 void
@@ -85,7 +85,7 @@ DopaCommonProperties::set_status( const DictionaryDatum& d,
   CommonSynapseProperties::set_status( d, cm );
 
   long vtgid;
-  if ( updateValue< long >( d, "vt", vtgid ) )
+  if ( updateValue< long >( d, names::vt, vtgid ) )
   {
     vt_ = dynamic_cast< global_volume_transmitter* >(
       kernel().node_manager.get_node( vtgid ) );
@@ -94,17 +94,18 @@ DopaCommonProperties::set_status( const DictionaryDatum& d,
       throw BadProperty( "Dopamine source must be volume transmitter" );
   }
 
-  updateValue< double >( d, "A", A_);
-  updateValue< double >( d, "tau", tau_);
-  updateValue< double >( d, "tau_n", tau_n_ );
-  updateValue< double >( d, "b_plus", b_plus_ );
-  updateValue< double >( d, "b_minus", b_minus_ );
-  updateValue< double >( d, "n_threshold", n_threshold_ );
-  updateValue< double >( d, "Wmin", Wmin_ );
-  updateValue< double >( d, "Wmax", Wmax_ );
-  updateValue< double >( d, "LTD_scaling", LTD_scaling_);
-  updateValue< double >( d, "tau_decay", tau_decay_);
-  updateValue< double >( d, "weight0", weight0_);
+
+  updateValue< double >( d, names::A, A_);
+  updateValue< double >( d, names::tau, tau_);
+  updateValue< double >( d, names::tau_n, tau_n_ );
+  updateValue< double >( d, names::n_threshold, n_threshold_ );
+  updateValue< double >( d, names::b_plus, b_plus_ );
+  updateValue< double >( d, names::b_minus, b_minus_ );
+  updateValue< double >( d, names::Wmin, Wmin_ );
+  updateValue< double >( d, names::Wmax, Wmax_ );
+  updateValue< double >( d, names::LTD_scaling, LTD_scaling_);
+  updateValue< double >( d, names::tau_decay, tau_decay_);
+  updateValue< double >( d, names::weight0, weight0_);
 }
 
 Node*
@@ -114,7 +115,10 @@ DopaCommonProperties::get_node()
     throw BadProperty(
       "No volume transmitter has been assigned to the synapse." );
   else
+  {
     return vt_;
+  }
+
 }
 
 

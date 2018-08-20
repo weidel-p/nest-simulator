@@ -39,6 +39,7 @@ namespace nest
 namespace names
 {
 extern const Name a; //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
+extern const Name A; // learning step
 extern const Name a_acausal; //!< Used by stdp_connection_facetshw_hom
 extern const Name a_causal;  //!< Used by stdp_connection_facetshw_hom
 extern const Name A_lower;
@@ -73,6 +74,8 @@ extern const Name available;        //!< model paramater
 extern const Name autapses;         //!< Connectivity-related
 
 extern const Name b;    //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
+extern const Name b_minus;   
+extern const Name b_plus;    
 extern const Name beta; //!< Specific to amat2_*
 extern const Name
   beta_Ca; //!< Increment in calcium concentration with each spike
@@ -279,6 +282,7 @@ extern const Name
 extern const Name interval; //!< Recorder parameter
 extern const Name is_refractory; //!< Neuron is in refractory period (debugging)
 
+extern const Name Kminus;         
 extern const Name Kplus;         //!< Used by stdp_connection_facetshw_hom
 extern const Name Kplus_triplet; //!< Used by stdp_connection_facetshw_hom
 
@@ -295,6 +299,7 @@ extern const Name local_spike_counter; //!< Used by event_delivery_manager
 extern const Name lookuptable_0;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_1;       //!< Used in stdp_connection_facetshw_hom
 extern const Name lookuptable_2;       //!< Used in stdp_connection_facetshw_hom
+extern const Name LTD_scaling;       
 
 extern const Name make_symmetric; //!< Connectivity-related
 extern const Name max_delay;      //!< In ConnBuilder
@@ -326,6 +331,7 @@ extern const Name
   n_proc; //!< Number of component processes of ppd_sup_/gamma_sup_generator
 extern const Name n_receptors; //!< number of receptor ports
 extern const Name n_synapses;
+extern const Name n_threshold;
 extern const Name neuron;            //!< Node type
 extern const Name network_size;      //!< Network size
 extern const Name next_readout_time; //!< Used by stdp_connection_facetshw_hom
@@ -577,6 +583,7 @@ extern const Name vp;            //!< Node parameter
 
 extern const Name w;      //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
 extern const Name weight; //!< Connection parameters
+extern const Name weight0; 
 extern const Name weight_per_lut_entry; //!< Used by
                                         //!< stdp_connection_facetshw_hom
 extern const Name weight_std; //!< Standard deviation/mean of noisy synapse.

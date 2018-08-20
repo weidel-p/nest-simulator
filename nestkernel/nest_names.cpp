@@ -26,6 +26,7 @@ namespace nest
 namespace names
 {
 const Name a( "a" );
+const Name A( "A" );
 const Name a_acausal( "a_acausal" );
 const Name a_causal( "a_causal" );
 const Name A_lower( "A_lower" );
@@ -60,6 +61,8 @@ const Name available( "available" );
 const Name autapses( "autapses" );
 
 const Name b( "b" );
+const Name b_minus( "b_minus" );
+const Name b_plus( "b_plus" );
 const Name beta( "beta" );
 const Name beta_Ca( "beta_Ca" );
 const Name binary( "binary" );
@@ -241,6 +244,7 @@ const Name Interpol_Order( "Interpol_Order" );
 const Name interval( "interval" );
 const Name is_refractory( "is_refractory" );
 
+const Name Kminus( "Kminus" );
 const Name Kplus( "Kplus" );
 const Name Kplus_triplet( "Kplus_triplet" );
 
@@ -256,6 +260,7 @@ const Name local_spike_counter( "local_spike_counter" );
 const Name lookuptable_0( "lookuptable_0" );
 const Name lookuptable_1( "lookuptable_1" );
 const Name lookuptable_2( "lookuptable_2" );
+const Name LTD_scaling( "LTD_scaling" );
 
 const Name make_symmetric( "make_symmetric" );
 const Name max_delay( "max_delay" );
@@ -283,6 +288,7 @@ const Name n_messages( "n_messages" );
 const Name n_proc( "n_proc" );
 const Name n_receptors( "n_receptors" );
 const Name n_synapses( "n_synapses" );
+const Name n_threshold( "n_threshold" );
 const Name neuron( "neuron" );
 const Name network_size( "network_size" );
 const Name next_readout_time( "next_readout_time" );
@@ -508,6 +514,7 @@ const Name vp( "vp" );
 
 const Name w( "w" );
 const Name weight( "weight" );
+const Name weight0( "weight0" );
 const Name weight_per_lut_entry( "weight_per_lut_entry" );
 const Name weight_std( "weight_std" );
 const Name weighted_spikes_ex( "weighted_spikes_ex" );

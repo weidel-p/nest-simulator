@@ -329,9 +329,9 @@ DopaConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
  def< double >( d, names::weight, weight_ );
 
  // own properties, different for individual synapse
- def< double >( d, "n", n_ );
- def< double >( d, "Kplus", Kplus_ );
- def< double >( d, "Kminus", Kminus_);
+ def< double >( d, names::n, n_ );
+ def< double >( d, names::Kplus, Kplus_ );
+ def< double >( d, names::Kminus, Kminus_);
 }
 
 template < typename targetidentifierT >
@@ -343,9 +343,9 @@ DopaConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
  ConnectionBase::set_status( d, cm );
  updateValue< double >( d, names::weight, weight_ );
 
- updateValue< double >( d, "n", n_ );
- updateValue< double >( d, "Kplus", Kplus_ );
- updateValue< double >( d, "Kminus", Kminus_);
+ updateValue< double >( d, names::n, n_ );
+ updateValue< double >( d, names::Kplus, Kplus_ );
+ updateValue< double >( d, names::Kminus, Kminus_);
 }
 
 
