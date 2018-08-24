@@ -289,6 +289,7 @@ private:
  // time of last update, which is either time of last presyn. spike or
  // time-driven update
  double t_last_update_;
+ double t_last_spike_;
  int dopa_spikes_idx_;
 };
 
@@ -304,6 +305,7 @@ DopaConnection< targetidentifierT >::DopaConnection()
  , n_( 0.0 )
  , dopa_spikes_idx_( 0 )
  , t_last_update_( 0.0 )
+ , t_last_spike_( 0.0 )
 {
 }
 
@@ -316,6 +318,7 @@ DopaConnection< targetidentifierT >::DopaConnection(
  , n_( rhs.n_ )
  , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
  , t_last_update_( rhs.t_last_update_ )
+ , t_last_spike_( rhs.t_last_spike_ )
 {
 }
 
@@ -369,30 +372,30 @@ DopaConnection< targetidentifierT >::process_next_(
 
 
   // calculate decay before weight update
-  if (cp.tau_decay_ > 0.){
-    if (weight_ > cp.weight0_) {
-        weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
+  //if (cp.tau_decay_ > 0.){
+  //  if (weight_ > cp.weight0_) {
+  //      weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
 
-        if (weight_ < cp.weight0_)
-            weight_ = cp.weight0_;
-    }
-    else{
-        weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
+  //      if (weight_ < cp.weight0_)
+  //          weight_ = cp.weight0_;
+  //  }
+  //  else{
+  //      weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
 
-        if (weight_ > cp.weight0_)
-            weight_ = cp.weight0_;
-    }
-  }
+  //      if (weight_ > cp.weight0_)
+  //          weight_ = cp.weight0_;
+  //  }
+  //}
 
 
   double n_diff = n_ - cp.n_threshold_;
 
-  if (n_diff > 0){
-      n_diff = n_diff * n_diff;
-  }
-  else{
-      n_diff = - n_diff * n_diff;
-  }
+  //if (n_diff > 0){
+  //    n_diff = n_diff * n_diff;
+  //}
+  //else{
+  //    n_diff = - n_diff * n_diff;
+  //}
 
   // update weight 
   //double dw = cp.A_ * (Kplus_ * Kminus_ - Kplus_long_ * Kminus__long) * 
@@ -460,11 +463,14 @@ DopaConnection< targetidentifierT >::send( Event& e,
 
  Node* target = get_target( t );
 
- // t_lastspike_ = 0 initially
-
  double t_spike = e.get_stamp().get_ms();
 
- process_next_(t, t_last_update_, t_spike, cp);
+
+ //process_next_(t, t_last_update_, t_spike, cp);
+ 
+ Kplus_ = Kplus_ * std::exp( ( t_last_spike_ - t_spike ) / cp.tau_ ) + 1.;
+
+ t_last_spike_ = t_spike;
 
  e.set_receiver( *target );
  e.set_weight( weight_ );
@@ -475,8 +481,6 @@ DopaConnection< targetidentifierT >::send( Event& e,
  e.set_dopa( n_ );
  e();
 
- Kplus_ += 1.;
- t_last_update_ = t_spike;
 }
 
 template < typename targetidentifierT >
@@ -486,10 +490,39 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
  const double t_trig,
  const DopaCommonProperties& cp )
 {
+
+    Node* target = get_target( t );
+
+    //update all traces
     n_ = trace;
+    double Kplus = Kplus_ * std::exp( ( t_last_spike_ - t_trig ) / cp.tau_ );
+    double Kminus = target->get_K_value( t_trig );
+
+    double dt = t_trig - t_last_update_;
+
+    // update weight
+    
+    double n_diff = trace - cp.n_threshold_;
+    double dw = 0;
+    if (Kminus > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
+        dw = cp.A_ * (Kplus - cp.b_plus_) * n_diff * Kminus * dt;
+    }
 
 
+    //std::cout << "update weight at " << t_trig << " " << Kplus_ << " " << Kminus << " " << trace << " " << dt << " " << dw << std::endl; 
 
+    weight_ += dw;
+
+
+    if ( weight_ > cp.Wmax_ ){
+      weight_ = cp.Wmax_;
+    }
+    if ( weight_ < cp.Wmin_){
+      weight_ = cp.Wmin_;
+    }
+
+
+    t_last_update_ = t_trig;
 }
 
 
