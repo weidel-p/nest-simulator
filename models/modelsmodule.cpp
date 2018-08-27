@@ -68,6 +68,7 @@
 #include "iaf_psc_delta.h"
 #include "iaf_psc_exp.h"
 #include "iaf_psc_exp_multisynapse.h"
+#include "iaf_psc_exp_scaling.h"
 #include "iaf_tum_2000.h"
 #include "izhikevich.h"
 #include "mat2_psc_exp.h"
@@ -194,6 +195,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< iaf_psc_exp >( "iaf_psc_exp" );
   kernel().model_manager.register_node_model< iaf_psc_exp_multisynapse >(
     "iaf_psc_exp_multisynapse" );
+  kernel().model_manager.register_node_model< iaf_psc_exp_scaling >( "iaf_psc_exp_scaling" );
   kernel().model_manager.register_node_model< iaf_tum_2000 >( "iaf_tum_2000" );
   kernel().model_manager.register_node_model< amat2_psc_exp >(
     "amat2_psc_exp" );

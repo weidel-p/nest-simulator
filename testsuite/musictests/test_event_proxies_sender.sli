@@ -38,10 +38,4 @@ sg n << /weight 750.0 >> Connect
 vm << /label (sender) /record_to [ /file ] >> SetStatus
 
 vm n Connect
-
-/music_event_out_proxy Create /meop Set
-meop << /port_name (spikes_out) >> SetStatus
-
-sg meop << /music_channel 0 >> Connect
-
 10 Simulate

@@ -496,7 +496,7 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
     //update all traces
     n_ = trace;
     double Kplus = Kplus_ * std::exp( ( t_last_spike_ - t_trig ) / cp.tau_ );
-    double Kminus = target->get_K_value( t_trig );
+    Kminus_ = target->get_K_value( t_trig );
 
     double dt = t_trig - t_last_update_;
 
@@ -504,14 +504,21 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
     
     double n_diff = trace - cp.n_threshold_;
     double dw = 0;
-    if (Kminus > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
-        dw = cp.A_ * (Kplus - cp.b_plus_) * n_diff * Kminus * dt;
+    if (Kminus_ > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
+        dw = cp.A_ * (Kplus - cp.b_plus_) * n_diff * Kminus_ * dt;
     }
 
 
-    //std::cout << "update weight at " << t_trig << " " << Kplus_ << " " << Kminus << " " << trace << " " << dt << " " << dw << std::endl; 
+    if (dw > 0){
+        weight_ += dw;
+    }
+    else{
+        weight_ += dw * cp.LTD_scaling_;
+    }
 
-    weight_ += dw;
+
+
+    //std::cout << "update weight at " << t_trig << " " << Kplus_ << " " << Kminus << " " << trace << " " << dt << " " << dw << std::endl; 
 
 
     if ( weight_ > cp.Wmax_ ){
