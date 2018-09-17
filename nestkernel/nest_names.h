@@ -239,6 +239,7 @@ extern const Name h; //!< Summed input to a neuron (Ginzburg neuron)
 extern const Name has_connections; //!< Specific to iaf_psc_exp_multisynapse and
                                    //!< iaf_psc_alpha_multisynapse
 extern const Name has_delay;       //!< Used in connector_model_impl
+extern const Name heaviside;
 extern const Name histogram;       //!< Specific to correlation_detector
 extern const Name histogram_correction; //!< Specific to correlation_detector
 extern const Name HMIN; //!< Smallest integration step for adaptive stepsize
@@ -418,6 +419,7 @@ extern const Name rule;   //!< Connectivity-related
 
 extern const Name S; //!< Binary state (output) of neuron (Ginzburg neuron)
 extern const Name S_act_NMDA;       //!< specific to Hill & Tononi 2005
+extern const Name scaling_ratio;
 extern const Name scientific;       //!< Recorder parameter
 extern const Name screen;           //!< Recorder parameter
 extern const Name sdev;             //!< Used in pulsepacket_generator
@@ -470,6 +472,7 @@ extern const Name
 extern const Name t_ref_tot; //!< Total refractory period, iaf_tum_2000
 extern const Name t_spike;   //!< Time of last spike
 extern const Name target;    //!< Connection parameters
+extern const Name target_rate;
 extern const Name target_thread; //!< Connection parameters
 extern const Name targets;       //!< Connection parameters
 extern const Name tau;           //!< Used by stdp_connection_facetshw_hom

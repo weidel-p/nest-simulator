@@ -147,6 +147,9 @@ public:
  double LTD_scaling_;
  double tau_decay_;
  double weight0_;
+ bool heaviside_;
+ double target_rate_;
+ double scaling_ratio_;
 };
 
 inline long
@@ -495,7 +498,7 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
 
     //update all traces
     n_ = trace;
-    double Kplus = Kplus_ * std::exp( ( t_last_spike_ - t_trig ) / cp.tau_ );
+    Kplus_ = Kplus_ * std::exp( ( t_last_spike_ - t_trig ) / cp.tau_ );
     Kminus_ = target->get_K_value( t_trig );
 
     double dt = t_trig - t_last_update_;
@@ -504,8 +507,18 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
     
     double n_diff = trace - cp.n_threshold_;
     double dw = 0;
-    if (Kminus_ > cp.b_minus_ and Kplus_ > cp.b_plus_ ){
-        dw = cp.A_ * Kplus * n_diff * Kminus_ * dt;
+    
+    if (cp.heaviside_)
+    {
+        if (Kminus_ > cp.b_minus_ and Kplus_ > cp.b_plus_ ){
+            dw = dt * cp.A_ * (Kplus_ * n_diff * Kminus_ + cp.scaling_ratio_ * (cp.target_rate_ - Kminus_) * weight_ * weight_);
+        }
+    }
+    else
+    {
+        if (Kminus_ > cp.b_minus_){
+            dw = dt * cp.A_ * ((Kplus_ - cp.b_plus_) * n_diff * Kminus_ + cp.scaling_ratio_ * (cp.target_rate_ - Kminus_) * weight_ * weight_);
+        }
     }
 
 
@@ -531,8 +544,8 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
 //    std::cout << "update weight at " << t_trig << " t last " << t_last_update_ << " kp " << Kplus << " km " << Kminus_ << " n " << trace << " ltd " << cp.LTD_scaling_ << " dw " << dw <<  " w " << weight_ << std::endl; 
 
 
-
     t_last_update_ = t_trig;
+    t_last_spike_ = t_trig;
 }
 
 

@@ -52,6 +52,9 @@ DopaCommonProperties::DopaCommonProperties()
   , LTD_scaling_( 1.0 )
   , tau_decay_( 0.0 )
   , weight0_( 1.0 )
+  , heaviside_( true )
+  , target_rate_ (8.)
+  , scaling_ratio_(0.)
 {
 }
 
@@ -76,6 +79,9 @@ DopaCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, names::LTD_scaling, LTD_scaling_ );
   def< double >( d, names::tau_decay, tau_decay_);
   def< double >( d, names::weight0, weight0_);
+  def< bool >( d, names::heaviside, heaviside_);
+  def< double >( d, names::target_rate, target_rate_);
+  def< double >( d, names::scaling_ratio, scaling_ratio_);
 }
 
 void
@@ -106,6 +112,9 @@ DopaCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::LTD_scaling, LTD_scaling_);
   updateValue< double >( d, names::tau_decay, tau_decay_);
   updateValue< double >( d, names::weight0, weight0_);
+  updateValue< bool >( d, names::heaviside, heaviside_);
+  updateValue< double >( d, names::target_rate, target_rate_);
+  updateValue< double >( d, names::scaling_ratio, scaling_ratio_);
 }
 
 Node*
