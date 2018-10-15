@@ -139,6 +139,14 @@ public:
  void get_status( DictionaryDatum& d ) const;
  void set_status( const DictionaryDatum& d );
 
+  /**
+   * Since volume transmitters are duplicated on each thread, and are
+   * hence treated just as devices during node creation, we need to
+   * define the corresponding setter and getter for local_device_id.
+   **/
+  void set_local_device_id( const index ldid );
+  index get_local_device_id() const;
+
  const std::vector< spikecounter >& deliver_spikes();
 
 private:
@@ -172,6 +180,8 @@ private:
 
  Parameters_ P_;
  Buffers_ B_;
+
+ index local_device_id_;
 };
 
 inline port
@@ -207,6 +217,18 @@ global_volume_transmitter::set_status( const DictionaryDatum& d )
 
  // if we get here, temporaries contain consistent set of properties
  P_ = ptmp;
+}
+
+inline void
+global_volume_transmitter::set_local_device_id( const index ldid )
+{
+  local_device_id_ = ldid;
+}
+
+inline index
+global_volume_transmitter::get_local_device_id() const
+{
+  return local_device_id_;
 }
 
 } // namespace
