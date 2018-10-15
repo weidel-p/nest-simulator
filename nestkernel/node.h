@@ -72,7 +72,7 @@ class Archiving_Node;
  * A new type of Node must be derived from this base class and
  * implement its interface.
  * In order to keep the inheritance hierarchy flat, it is encouraged
- * to direcly subclass from base class Node.
+ * to directly subclass from base class Node.
  *
  * @see class Event
  * @see Subnet
@@ -131,24 +131,6 @@ public:
    * new nodes to the network.
    */
   virtual bool has_proxies() const;
-
-  /**
-   * Returns true for potential global receivers (e.g. spike_detector) and false
-   * otherwise
-   */
-  virtual bool potential_global_receiver() const;
-
-  /**
-   * Sets has_proxies_ member variable (to switch to global spike detection
-   * mode)
-   */
-  virtual void set_has_proxies( const bool );
-
-  /**
-   * Sets local_receiver_ member variable (to switch to global spike detection
-   * mode)
-   */
-  virtual void set_local_receiver( const bool );
 
   /**
    * Returns true if the node only receives events from nodes/devices
@@ -444,6 +426,12 @@ public:
   virtual port handles_test_event( DSSpikeEvent&, rport receptor_type );
   virtual port handles_test_event( DSCurrentEvent&, rport receptor_type );
   virtual port handles_test_event( GapJunctionEvent&, rport receptor_type );
+  virtual port handles_test_event( InstantaneousRateConnectionEvent&,
+    rport receptor_type );
+  virtual port handles_test_event( DiffusionConnectionEvent&,
+    rport receptor_type );
+  virtual port handles_test_event( DelayedRateConnectionEvent&,
+    rport receptor_type );
 
   /**
    * Required to check, if source neuron may send a SecondaryEvent.
@@ -453,6 +441,33 @@ public:
    * @throws IllegalConnection
    */
   virtual void sends_secondary_event( GapJunctionEvent& ge );
+
+  /**
+   * Required to check, if source neuron may send a SecondaryEvent.
+   * This base class implementation throws IllegalConnection
+   * and needs to be overwritten in the derived class.
+   * @ingroup event_interface
+   * @throws IllegalConnection
+   */
+  virtual void sends_secondary_event( InstantaneousRateConnectionEvent& re );
+
+  /**
+   * Required to check, if source neuron may send a SecondaryEvent.
+   * This base class implementation throws IllegalConnection
+   * and needs to be overwritten in the derived class.
+   * @ingroup event_interface
+   * @throws IllegalConnection
+   */
+  virtual void sends_secondary_event( DiffusionConnectionEvent& de );
+
+  /**
+   * Required to check, if source neuron may send a SecondaryEvent.
+   * This base class implementation throws IllegalConnection
+   * and needs to be overwritten in the derived class.
+   * @ingroup event_interface
+   * @throws IllegalConnection
+   */
+  virtual void sends_secondary_event( DelayedRateConnectionEvent& re );
 
   /**
    * Register a STDP connection
@@ -543,6 +558,30 @@ public:
    * @throws UnexpectedEvent
    */
   virtual void handle( GapJunctionEvent& e );
+
+  /**
+   * Handler for rate neuron events.
+   * @see handle(thread, InstantaneousRateConnectionEvent&)
+   * @ingroup event_interface
+   * @throws UnexpectedEvent
+   */
+  virtual void handle( InstantaneousRateConnectionEvent& e );
+
+  /**
+   * Handler for rate neuron events.
+   * @see handle(thread, InstantaneousRateConnectionEvent&)
+   * @ingroup event_interface
+   * @throws UnexpectedEvent
+   */
+  virtual void handle( DiffusionConnectionEvent& e );
+
+  /**
+   * Handler for delay rate neuron events.
+   * @see handle(thread, DelayedRateConnectionEvent&)
+   * @ingroup event_interface
+   * @throws UnexpectedEvent
+   */
+  virtual void handle( DelayedRateConnectionEvent& e );
 
   /**
    * @defgroup SP_functions Structural Plasticity in NEST.
@@ -644,12 +683,6 @@ public:
    * @throws UnexpectedEvent
    */
   virtual void get_K_values( double t, double& Kminus, double& triplet_Kminus );
-
-  /**
-   * return tau_minus_.
-   * @throws UnexpectedEvent
-   */
-  virtual double get_tau_minus();
 
   /**
   * return the spike history for (t1,t2].
@@ -781,7 +814,19 @@ public:
     buffers_initialized_ = initialized;
   }
 
-  virtual double get_firing_rate( double t );
+  /**
+   * Sets the local device id.
+   * Throws an error if used on a non-device node.
+   * @see get_local_device_id
+   */
+  virtual void set_local_device_id( const index lsdid );
+
+  /**
+   * Gets the local device id.
+   * Throws an error if used on a non-device node.
+   * @see set_local_device_id
+   */
+  virtual index get_local_device_id() const;
 
   /**
    * Return the number of thread siblings in SiblingContainer.
@@ -914,12 +959,6 @@ inline bool
 Node::has_proxies() const
 {
   return true;
-}
-
-inline bool
-Node::potential_global_receiver() const
-{
-  return false;
 }
 
 inline bool

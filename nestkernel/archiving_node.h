@@ -176,17 +176,6 @@ public:
    */
   double get_tau_Ca() const;
 
-   /**
-   * retrieve the current value of tau_minus_
-   */
-  double get_tau_minus();
-
-  /**
-   * \fn double get_K_value(long t)
-   * return the Kminus value at t (in ms).
-   */
-  double get_firing_rate( double t );
-
 protected:
   /**
    * \fn void set_spiketime(Time const & t_sp, double offset)
@@ -226,9 +215,6 @@ private:
   double tau_minus_triplet_inv_;
 
   double last_spike_;
-
-  double firing_rate_;
-  double tau_rate_;
 
   // spiking history needed by stdp synapses
   std::deque< histentry > history_;

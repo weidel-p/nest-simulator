@@ -170,6 +170,7 @@ class DopaConnection : public Connection< targetidentifierT >
 {
 
 public:
+
  typedef DopaCommonProperties CommonPropertiesType;
  typedef Connection< targetidentifierT > ConnectionBase;
 
@@ -208,7 +209,7 @@ public:
   * Send an event to the receiver of this connection.
   * \param e The event to send
   */
- void send( Event& e, thread t, double_t, const DopaCommonProperties& cp );
+ void send( Event& e, thread t, const DopaCommonProperties& cp );
 
  void trigger_update_weight( thread t,
    const double trace,
@@ -255,7 +256,6 @@ public:
  check_connection( Node& s,
    Node& t,
    rport receptor_type,
-   double t_lastspike,
    const CommonPropertiesType& cp )
  {
    if ( cp.vt_ == 0 )
@@ -265,7 +265,7 @@ public:
    ConnTestDummyNode dummy_target;
    ConnectionBase::check_connection_( dummy_target, s, t, receptor_type );
 
-   t.register_stdp_connection( t_lastspike - get_delay() );
+   t.register_stdp_connection( t_last_spike_ - get_delay() );
  }
 
  void
@@ -460,7 +460,6 @@ template < typename targetidentifierT >
 inline void
 DopaConnection< targetidentifierT >::send( Event& e,
  thread t,
- double_t,
  const DopaCommonProperties& cp )
 {
 

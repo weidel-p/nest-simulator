@@ -424,7 +424,7 @@ private:
   /**
    * Print the weight of an event.
    */
-  void print_weight_( std::ostream&, double, double, double, double );
+  void print_weight_( std::ostream&, double);
 
   /**
    * Print the target gid of an event.
@@ -451,7 +451,7 @@ private:
    * @param store port of event
    * @param store rport of event
    */
-  void store_data_( index, const Time&, double, double, index, long, long, double, double, double );
+  void store_data_( index, const Time&, double, double, index, long, long);
 
   /**
    * Clear data in internal structure, and call clear_data_hook().
@@ -609,7 +609,7 @@ RecordingDevice::is_active( Time const& T ) const
 {
   const long stamp = T.get_steps();
 
-  return get_t_min_() < stamp && stamp <= get_t_max_();
+  return get_t_min_() < stamp and stamp <= get_t_max_();
 }
 
 inline void

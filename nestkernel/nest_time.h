@@ -144,6 +144,8 @@ class Time
   // delay: steps, signed long
   // double: milliseconds (double!)
 
+  friend class TimeConverter;
+
   /////////////////////////////////////////////////////////////
   // Range: Limits & conversion factors for different types
   /////////////////////////////////////////////////////////////
@@ -382,7 +384,7 @@ public:
   bool
   is_finite() const
   {
-    return tics != LIM_POS_INF.tics && tics != LIM_NEG_INF.tics;
+    return tics != LIM_POS_INF.tics and tics != LIM_NEG_INF.tics;
   }
 
   bool
@@ -414,7 +416,7 @@ public:
   bool
   is_step() const
   {
-    return tics > 0 && is_grid_time();
+    return tics > 0 and is_grid_time();
   }
 
   bool
@@ -612,11 +614,11 @@ inline Time operator*( const long factor, const Time& t )
 {
   const tic_t n = factor * t.tics;
   // if no overflow:
-  if ( t.tics == 0 || n / t.tics == factor )
+  if ( t.tics == 0 or n / t.tics == factor )
   {
     return Time::tic( n ); // check range
   }
-  if ( ( t.tics > 0 && factor > 0 ) || ( t.tics < 0 && factor < 0 ) )
+  if ( ( t.tics > 0 and factor > 0 ) or ( t.tics < 0 and factor < 0 ) )
   {
     return Time( Time::LIM_POS_INF.tics );
   }

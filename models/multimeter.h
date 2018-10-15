@@ -28,9 +28,9 @@
 
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "exceptions.h"
 #include "kernel_manager.h"
-#include "node.h"
 #include "recording_device.h"
 #include "sibling_container.h"
 
@@ -109,6 +109,7 @@ senders                  intvectortype       <intvectortype>
 times                    doublevectortype    <doublevectortype>
 t_ref_remaining          doublevectortype    <doublevectortype>
 V_m                      doublevectortype    <doublevectortype>
+rate                     doublevectortype    <doublevectortype>
 --------------------------------------------------
 Total number of entries: 6
 
@@ -154,7 +155,7 @@ namespace nest
  * @ingroup Devices
  * @see UniversalDataLogger
  */
-class Multimeter : public Node
+class Multimeter : public DeviceNode
 {
 
 public:

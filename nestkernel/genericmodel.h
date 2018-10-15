@@ -57,7 +57,6 @@ public:
   Model* clone( const std::string& ) const;
 
   bool has_proxies();
-  bool potential_global_receiver();
   bool one_node_per_process();
   bool is_off_grid();
   /**
@@ -79,6 +78,12 @@ public:
   void sends_secondary_event( GapJunctionEvent& ge );
 
   SignalType sends_signal() const;
+
+  void sends_secondary_event( InstantaneousRateConnectionEvent& re );
+
+  void sends_secondary_event( DiffusionConnectionEvent& de );
+
+  void sends_secondary_event( DelayedRateConnectionEvent& re );
 
   Node const& get_prototype() const;
 
@@ -172,13 +177,6 @@ GenericModel< ElementT >::has_proxies()
 
 template < typename ElementT >
 inline bool
-GenericModel< ElementT >::potential_global_receiver()
-{
-  return proto_.potential_global_receiver();
-}
-
-template < typename ElementT >
-inline bool
 GenericModel< ElementT >::one_node_per_process()
 {
   return proto_.one_node_per_process();
@@ -206,6 +204,29 @@ inline void
 GenericModel< ElementT >::sends_secondary_event( GapJunctionEvent& ge )
 {
   return proto_.sends_secondary_event( ge );
+}
+
+template < typename ElementT >
+inline void
+GenericModel< ElementT >::sends_secondary_event(
+  InstantaneousRateConnectionEvent& re )
+{
+  return proto_.sends_secondary_event( re );
+}
+
+template < typename ElementT >
+inline void
+GenericModel< ElementT >::sends_secondary_event( DiffusionConnectionEvent& de )
+{
+  return proto_.sends_secondary_event( de );
+}
+
+template < typename ElementT >
+inline void
+GenericModel< ElementT >::sends_secondary_event(
+  DelayedRateConnectionEvent& re )
+{
+  return proto_.sends_secondary_event( re );
 }
 
 template < typename ElementT >

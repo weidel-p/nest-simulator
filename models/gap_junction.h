@@ -26,17 +26,20 @@ Name: gap_junction - Synapse type for gap-junction connections.
 
 Description:
  gap_junction is a connector to create gap junctions between pairs
- of neurons. Please note that gap junctions are two-way connections:
- In order to create an accurate gap-junction connection between two
- neurons i and j two connections are required:
+ of neurons. Gap junctions are bidirectional connections.
+ In order to create one accurate gap-junction connection between
+ neurons i and j two NEST connections are required: For each created
+ connection a second connection with the exact same parameters in
+ the opposite direction is required. NEST provides the possibility
+ to create both connections with a single call to Connect via
+ the make_symmetric flag:
 
- i j conn_spec gap_junction   Connect
- j i conn_spec gap_junction   Connect
+ i j << /rule /one_to_one /make_symmetric true >> /gap_junction Connect
 
  The value of the parameter "delay" is ignored for connections of
  type gap_junction.
 
-Transmits: GapJEvent
+Transmits: GapJunctionEvent
 
 References:
 
@@ -66,24 +69,19 @@ SeeAlso: synapsedict, hh_psc_alpha_gap
 
 namespace nest
 {
-
 /**
  * Class representing a gap-junction connection. A gap-junction connection
  * has the properties weight, delay and receiver port.
  */
-
 template < typename targetidentifierT >
 class GapJunction : public Connection< targetidentifierT >
 {
-
-  double weight_;
 
 public:
   // this line determines which common properties to use
   typedef CommonSynapseProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
   typedef GapJunctionEvent EventType;
-
 
   /**
    * Default Constructor.
@@ -95,7 +93,6 @@ public:
   {
   }
 
-
   // Explicitly declare all methods inherited from the dependent base
   // ConnectionBase. This avoids explicit name prefixes in all places these
   // functions are used. Since ConnectionBase depends on the template parameter,
@@ -104,12 +101,10 @@ public:
   using ConnectionBase::get_rport;
   using ConnectionBase::get_target;
 
-
   void
   check_connection( Node& s,
     Node& t,
     rport receptor_type,
-    double,
     const CommonPropertiesType& )
   {
     EventType ge;
@@ -125,10 +120,9 @@ public:
    * Send an event to the receiver of this connection.
    * \param e The event to send
    * \param p The port under which this connection is stored in the Connector.
-   * \param t_lastspike Time point of last spike emitted
    */
   void
-  send( Event& e, thread t, double, const CommonSynapseProperties& )
+  send( Event& e, thread t, const CommonSynapseProperties& )
   {
     e.set_weight( weight_ );
     e.set_receiver( *get_target( t ) );
@@ -151,6 +145,9 @@ public:
   {
     throw BadProperty( "gap_junction connection has no delay" );
   }
+
+private:
+  double weight_; //!< connection weight
 };
 
 template < typename targetidentifierT >

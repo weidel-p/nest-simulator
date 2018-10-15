@@ -155,6 +155,13 @@ DynamicLoaderModule::LoadModuleFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 1 );
 
+  if ( kernel().model_manager.has_user_models()
+    or kernel().model_manager.has_user_prototypes() )
+  {
+    throw DynamicModuleManagementError(
+      "Modules cannot be installed after CopyModel has been called" );
+  }
+
   sDynModule new_module;
 
   new_module.name = getValue< std::string >( i->OStack.top() );
@@ -209,7 +216,7 @@ DynamicLoaderModule::LoadModuleFunction::execute( SLIInterpreter* i ) const
   // modules. We can only perform it after we have loaded the module.
   if ( std::find_if( DynamicLoaderModule::getLinkedModules().begin(),
          DynamicLoaderModule::getLinkedModules().end(),
-         std::bind2nd( std::ptr_fun( has_name ), pModule->name() ) )
+         std::bind( has_name, std::placeholders::_1, pModule->name() ) )
     != DynamicLoaderModule::getLinkedModules().end() )
   {
     lt_dlclose( hModule ); // close module again
