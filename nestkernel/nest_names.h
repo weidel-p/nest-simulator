@@ -302,6 +302,7 @@ extern const Name n_proc;
 extern const Name n_receptors;
 extern const Name n_synapses;
 extern const Name n_threshold;
+extern const Name n_abs;
 extern const Name network_size;
 extern const Name neuron;
 extern const Name next_readout_time;

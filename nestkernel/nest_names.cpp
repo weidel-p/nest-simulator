@@ -282,6 +282,7 @@ const Name n_proc( "n_proc" );
 const Name n_receptors( "n_receptors" );
 const Name n_synapses( "n_synapses" );
 const Name n_threshold( "n_threshold" );
+const Name n_abs( "n_abs" );
 const Name network_size( "network_size" );
 const Name neuron( "neuron" );
 const Name next_readout_time( "next_readout_time" );

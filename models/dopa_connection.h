@@ -142,6 +142,7 @@ public:
  double b_plus_;
  double b_minus_;
  double n_threshold_;
+ bool n_abs_;
  double Wmin_;
  double Wmax_;
  double LTD_scaling_;
@@ -392,6 +393,7 @@ DopaConnection< targetidentifierT >::process_next_(
 
 
   double n_diff = n_ - cp.n_threshold_;
+  
 
   //if (n_diff > 0){
   //    n_diff = n_diff * n_diff;
@@ -505,6 +507,10 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
     // update weight
     
     double n_diff = trace - cp.n_threshold_;
+
+    if (cp.n_abs_)
+        n_diff = abs(n_diff);
+
     double dw = 0;
     
     if (cp.heaviside_)
