@@ -47,6 +47,7 @@
 nest::global_volume_transmitter::Parameters_::Parameters_()
   : deliver_interval_( 1 ) // in steps of mindelay
   , tau_(20.)
+  , fn_log_("")
 {
 }
 
@@ -58,13 +59,15 @@ void
 nest::global_volume_transmitter::Parameters_::get( DictionaryDatum& d ) const
 {
   def< long >( d, names::deliver_interval, deliver_interval_ );
-  def< double >( d, "tau", tau_);
+  def< double >( d, names::tau, tau_);
+  def< std::string >( d, names::filename, fn_log_);
 }
 
 void ::nest::global_volume_transmitter::Parameters_::set( const DictionaryDatum& d )
 {
   updateValue< long >( d, names::deliver_interval, deliver_interval_ );
-  updateValue< double >( d, "tau", tau_);
+  updateValue< double >( d, names::tau, tau_);
+  updateValue< std::string >( d, names::filename, fn_log_);
 }
 
 /* ----------------------------------------------------------------
@@ -94,7 +97,7 @@ nest::global_volume_transmitter::init_buffers_()
   B_.trace_ = 0;
   B_.resolution_ = Time::get_resolution().get_ms();
   Archiving_Node::clear_history();
-  B_.fh_.open("dopa.csv");
+  B_.fh_.open(P_.fn_log_);
 }
 
 void

@@ -174,6 +174,7 @@ extern const Name ex_spikes;
 extern const Name fbuffer_size;
 extern const Name file;
 extern const Name file_extension;
+extern const Name filename;
 extern const Name filenames;
 extern const Name flush_after_simulate;
 extern const Name flush_records;

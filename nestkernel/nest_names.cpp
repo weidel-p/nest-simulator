@@ -153,6 +153,7 @@ const Name ex_spikes( "ex_spikes" );
 const Name fbuffer_size( "fbuffer_size" );
 const Name file( "file" );
 const Name file_extension( "file_extension" );
+const Name filename( "filename" );
 const Name filenames( "filenames" );
 const Name flush_after_simulate( "flush_after_simulate" );
 const Name flush_records( "flush_records" );

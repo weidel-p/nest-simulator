@@ -171,6 +171,7 @@ private:
    void set( const DictionaryDatum& );
    long deliver_interval_; //!< update interval in d_min time steps
    double tau_;
+   std::string fn_log_;
  };
 
  //-----------------------------------------------
