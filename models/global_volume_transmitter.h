@@ -33,6 +33,9 @@
 // Includes from sli:
 #include "namedatum.h"
 
+// c++ includes
+#include <iostream>
+#include <fstream>
 
 /* BeginDocumentation
 
@@ -176,6 +179,7 @@ private:
  {
      double trace_;
      double resolution_;
+     std::ofstream fh_;
  };
 
  Parameters_ P_;

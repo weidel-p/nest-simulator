@@ -24,6 +24,8 @@
 
 // C++ includes:
 #include <numeric>
+#include <iostream>
+#include <fstream>
 
 // Includes from nestkernel:
 #include "connector_base.h"
@@ -92,6 +94,7 @@ nest::global_volume_transmitter::init_buffers_()
   B_.trace_ = 0;
   B_.resolution_ = Time::get_resolution().get_ms();
   Archiving_Node::clear_history();
+  B_.fh_.open("dopa.csv");
 }
 
 void
@@ -119,6 +122,8 @@ nest::global_volume_transmitter::update( const Time&, const long from, const lon
         get_gid(), B_.trace_, t_trig );
 
   }
+  
+  B_.fh_ << to << "\t" << B_.trace_ << std::endl; 
 }
 
 void

@@ -521,9 +521,7 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
     }
     else
     {
-        if (Kminus_ > cp.b_minus_){
-            dw = dt * cp.A_ * ((Kplus_ - cp.b_plus_) * n_diff * Kminus_ + cp.scaling_ratio_ * (cp.target_rate_ - Kminus_) * weight_ * weight_);
-        }
+        dw = dt * cp.A_ * ((Kplus_ - cp.b_plus_) * n_diff * (Kminus_ - cp.b_minus_) + cp.scaling_ratio_ * (cp.target_rate_ - Kminus_) * weight_ * weight_);
     }
 
 
