@@ -113,17 +113,24 @@ nest::global_volume_transmitter::update( const Time&, const long from, const lon
       % ( P_.deliver_interval_ * kernel().connection_manager.get_min_delay() )
     == 0 )
   {
-    double t_trig =
-      Time(
-        Time::step( kernel().simulation_manager.get_slice_origin().get_steps()
-          + to ) ).get_ms();
+
+      double t_trig = Time(Time::step( kernel().simulation_manager.get_slice_origin().get_steps() + to ) ).get_ms();
 
       kernel().connection_manager.trigger_update_weight(
         get_gid(), B_.trace_, t_trig );
 
+
+  }
+
+ // 1000 times min delay 
+  if ( ( kernel().simulation_manager.get_slice_origin().get_steps() + to ) % ( 1000 * kernel().connection_manager.get_min_delay() )
+    == 0 )
+  {
+
+      double t_trig = Time(Time::step( kernel().simulation_manager.get_slice_origin().get_steps() + to ) ).get_ms();
+      B_.fh_ << t_trig << "\t" << B_.trace_ << std::endl; 
   }
   
-  B_.fh_ << to << "\t" << B_.trace_ << std::endl; 
 }
 
 void
