@@ -80,6 +80,7 @@ extern const Name Aplus_triplet;
 extern const Name archiver_length;
 extern const Name autapses;
 extern const Name available;
+extern const Name avg;
 
 extern const Name b;
 extern const Name b_minus;   
@@ -430,6 +431,7 @@ extern const Name tau;
 extern const Name tau_1;
 extern const Name tau_2;
 extern const Name tau_ahp;
+extern const Name tau_avg;
 extern const Name tau_c;
 extern const Name tau_Ca;
 extern const Name tau_D_KNa;

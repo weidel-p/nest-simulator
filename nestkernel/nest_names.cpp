@@ -59,6 +59,7 @@ const Name Aplus_triplet( "Aplus_triplet" );
 const Name archiver_length( "archiver_length" );
 const Name autapses( "autapses" );
 const Name available( "available" );
+const Name avg( "avg" );
 
 const Name b( "b" );
 const Name b_minus( "b_minus" );
@@ -411,6 +412,7 @@ const Name tau( "tau" );
 const Name tau_1( "tau_1" );
 const Name tau_2( "tau_2" );
 const Name tau_ahp( "tau_ahp" );
+const Name tau_avg( "tau_avg" );
 const Name tau_c( "tau_c" );
 const Name tau_Ca( "tau_Ca" );
 const Name tau_D_KNa( "tau_D_KNa" );

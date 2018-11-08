@@ -142,6 +142,7 @@ public:
  double b_plus_;
  double b_minus_;
  double n_threshold_;
+ double n_tau_avg_;
  bool n_abs_;
  double Wmin_;
  double Wmax_;
@@ -288,6 +289,7 @@ private:
  double Kplus_;
  double Kminus_;
  double n_;
+ double running_avg_;
 
 
  // time of last update, which is either time of last presyn. spike or
@@ -307,6 +309,7 @@ DopaConnection< targetidentifierT >::DopaConnection()
  , weight_( 1.0 )
  , Kplus_( 0.0 )
  , n_( 0.0 )
+ , running_avg_( 0.0 )
  , dopa_spikes_idx_( 0 )
  , t_last_update_( 0.0 )
  , t_last_spike_( 0.0 )
@@ -320,6 +323,7 @@ DopaConnection< targetidentifierT >::DopaConnection(
  , weight_( rhs.weight_ )
  , Kplus_( rhs.Kplus_ )
  , n_( rhs.n_ )
+ , running_avg_( rhs.running_avg_ )
  , dopa_spikes_idx_( rhs.dopa_spikes_idx_ )
  , t_last_update_( rhs.t_last_update_ )
  , t_last_spike_( rhs.t_last_spike_ )
@@ -349,107 +353,11 @@ DopaConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
  // base class properties
  ConnectionBase::set_status( d, cm );
  updateValue< double >( d, names::weight, weight_ );
-
  updateValue< double >( d, names::n, n_ );
+ updateValue< double >( d, names::avg, running_avg_ );
  updateValue< double >( d, names::Kplus, Kplus_ );
  updateValue< double >( d, names::Kminus, Kminus_);
 }
-
-
-
-
-template < typename targetidentifierT >
-inline void
-DopaConnection< targetidentifierT >::process_next_(
- thread t,
- double t0,
- double t1,
- const DopaCommonProperties& cp )
-{
-  //std::cout << t0 << " " << t1 << std::endl;
-
-  assert(t1 >= t0);
-  Node* target = get_target( t );
-
-  // update all traces to  t0
-  Kminus_ = target->get_K_value( t0 );
-
-
-  // calculate decay before weight update
-  //if (cp.tau_decay_ > 0.){
-  //  if (weight_ > cp.weight0_) {
-  //      weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
-
-  //      if (weight_ < cp.weight0_)
-  //          weight_ = cp.weight0_;
-  //  }
-  //  else{
-  //      weight_ -= (weight_ - cp.weight0_) * ( 1 - std::exp( (t0 - t1) / cp.tau_decay_ ) );
-
-  //      if (weight_ > cp.weight0_)
-  //          weight_ = cp.weight0_;
-  //  }
-  //}
-
-
-  double n_diff = n_ - cp.n_threshold_;
-  
-
-  //if (n_diff > 0){
-  //    n_diff = n_diff * n_diff;
-  //}
-  //else{
-  //    n_diff = - n_diff * n_diff;
-  //}
-
-  // update weight 
-  //double dw = cp.A_ * (Kplus_ * Kminus_ - Kplus_long_ * Kminus__long) * 
-  //                    std::pow(n_diff, 2) * (t1 - t0); 
-  
-  double dw = 0;
-  if (Kminus_ > cp.b_minus_ ){ //and Kplus_ > cp.b_plus_ ){
-      dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * Kminus_;
-  }
-
-
-//  EXPERIMENTAL!!
-//  dw = cp.A_ * (Kplus_ - cp.b_plus_) * n_diff * (Kminus_ - cp.b_minus_);
-   //dw = cp.A_ * Kplus_ * n_diff * Kminus_;
-
-//  std::cout << Kminus_ << std::endl;
-
-
-
-
-  if (dw > 0){
-      weight_ += dw;
-  }
-  else{
-      weight_ += dw * cp.LTD_scaling_;
-  }
-
-  //if (dw > 0){
-  //    weight_ += (1 - (weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  //}
-  //else{
-  //    weight_ += ((weight_ - cp.Wmin_) / (cp.Wmax_ - cp.Wmin_) ) * dw;
-  //}
-
-
- if ( weight_ > cp.Wmax_ ){
-   weight_ = cp.Wmax_;
- }
- if ( weight_ < cp.Wmin_){
-   weight_ = cp.Wmin_;
- }
-
- // propagate Kplus_, Kminus__, n_ to t1 
- Kplus_ *= std::exp( ( t0 - t1 ) / cp.tau_ );
-
-
-
-}
-
 
 
 /**
@@ -504,9 +412,16 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
 
     double dt = t_trig - t_last_update_;
 
+    
+    // update running n avg
+    running_avg_ -= dt * running_avg_ / cp.n_tau_avg_;
+    running_avg_ += dt * n_ / cp.n_tau_avg_;
+
+
     // update weight
     
-    double n_diff = trace - cp.n_threshold_;
+//    double n_diff = trace - cp.n_threshold_;
+    double n_diff = trace - running_avg_;
 
     if (cp.n_abs_)
         n_diff = abs(n_diff);

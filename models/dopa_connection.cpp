@@ -47,6 +47,7 @@ DopaCommonProperties::DopaCommonProperties()
   , b_plus_( 0.0 )
   , b_minus_( 0.0 )
   , n_threshold_( 2.0 )
+  , n_tau_avg_( 10000.0 )
   , n_abs_( false )
   , Wmin_( 0.0 )
   , Wmax_( 200.0 )
@@ -75,6 +76,7 @@ DopaCommonProperties::get_status( DictionaryDatum& d ) const
   def< double >( d, names::b_plus, b_plus_ );
   def< double >( d, names::b_minus, b_minus_ );
   def< double >( d, names::n_threshold, n_threshold_ );
+  def< double >( d, names::tau_avg, n_tau_avg_);
   def< bool >( d, names::n_abs, n_abs_ );
   def< double >( d, names::Wmin, Wmin_ );
   def< double >( d, names::Wmax, Wmax_ );
@@ -107,6 +109,7 @@ DopaCommonProperties::set_status( const DictionaryDatum& d,
   updateValue< double >( d, names::tau, tau_);
   updateValue< double >( d, names::tau_n, tau_n_ );
   updateValue< double >( d, names::n_threshold, n_threshold_ );
+  updateValue< double >( d, names::tau_avg, n_tau_avg_);
   updateValue< bool >( d, names::n_abs, n_abs_ );
   updateValue< double >( d, names::b_plus, b_plus_ );
   updateValue< double >( d, names::b_minus, b_minus_ );
