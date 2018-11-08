@@ -341,6 +341,7 @@ DopaConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 
  // own properties, different for individual synapse
  def< double >( d, names::n, n_ );
+ def< double >( d, names::avg, running_avg_ );
  def< double >( d, names::Kplus, Kplus_ );
  def< double >( d, names::Kminus, Kminus_);
 }
