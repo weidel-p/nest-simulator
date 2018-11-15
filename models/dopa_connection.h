@@ -413,16 +413,17 @@ DopaConnection< targetidentifierT >::trigger_update_weight( thread t,
 
     double dt = t_trig - t_last_update_;
 
+    double n_diff = 0;
     
-    // update running n avg
-    running_avg_ -= dt * running_avg_ / cp.n_tau_avg_;
-    running_avg_ += dt * n_ / cp.n_tau_avg_;
-
-
-    // update weight
-    
-//    double n_diff = trace - cp.n_threshold_;
-    double n_diff = trace - running_avg_;
+    if (cp.n_tau_avg_ != 0.){
+        // update running n avg
+        running_avg_ -= dt * running_avg_ / cp.n_tau_avg_;
+        running_avg_ += dt * n_ / cp.n_tau_avg_;
+        n_diff = trace - running_avg_;
+    }
+    else{
+        n_diff = trace - cp.n_threshold_;
+    }
 
     if (cp.n_abs_)
         n_diff = abs(n_diff);
